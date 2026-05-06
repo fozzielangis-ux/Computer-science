@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Discover China</title>
+  <style>
+    :root {
+      --bg: #f7f7f7;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --accent: #c62828;
+      --muted: #555;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    header {
+      background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+        url("https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1600&q=80") center/cover no-repeat;
+      min-height: 50vh;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .hero-content h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin: 0;
+      letter-spacing: 1px;
+    }
+
+    .hero-content p {
+      margin-top: 0.75rem;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      max-width: 700px;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem 2rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    section {
+      background: var(--card);
+      border-left: 5px solid var(--accent);
+      padding: 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+
+    p { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero-content">
+      <h1>Discover China</h1>
+      <p>Explore one of the world’s oldest civilizations, where rich traditions meet modern innovation.</p>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>History and Heritage</h2>
+      <p>China has a continuous history stretching back thousands of years, with dynasties, philosophies, and cultural achievements that shaped East Asia and the wider world.</p>
+    </section>
+
+    <section>
+      <h2>Landmarks and Nature</h2>
+      <p>From the Great Wall and the Forbidden City to dramatic karst mountains and river valleys, China offers an extraordinary range of historical landmarks and natural scenery.</p>
+    </section>
+
+    <section>
+      <h2>Modern Cities and Innovation</h2>
+      <p>Major cities like Beijing, Shanghai, and Shenzhen highlight China’s rapid development through cutting-edge architecture, high-speed rail, and global leadership in technology and manufacturing.</p>
+    </section>
+  </main>
+</body>
+</html>
