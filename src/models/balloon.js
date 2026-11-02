@@ -193,7 +193,7 @@ export function createStormCloud(scale = 1) {
     group.add(eye);
     const brow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.04), eyeMat);
     brow.position.set(sx * 0.21, 0.27, 0.6);
-    brow.rotation.z = sx * -0.45;
+    brow.rotation.z = sx * 0.45;
     group.add(brow);
   }
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.022, 8, 16, Math.PI), eyeMat);

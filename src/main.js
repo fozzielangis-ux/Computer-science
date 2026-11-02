@@ -361,6 +361,7 @@ class Game {
 
 const game = new Game();
 window.__game = game;
+window.__audio = audio;
 game.init().catch((e) => {
   console.error(e);
   game.fatal();

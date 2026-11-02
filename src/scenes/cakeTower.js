@@ -117,7 +117,7 @@ export class CakeTowerScene extends BaseScene {
 
     // garden decorations: poles with string lights, gifts on the lawn
     this.updaters = [];
-    const poles = [[-6.5, 5.5], [-6.5, -6.5], [5.5, -6.5]];
+    const poles = [[-7, 4.5], [-2.5, -7.8], [6.2, -5]];
     const poleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
     for (const [x, z] of poles) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 4.2, 10), poleMat);
@@ -172,6 +172,20 @@ export class CakeTowerScene extends BaseScene {
 
     this.confetti = new Confetti(s, { max: 1400, floorY: 0.01 });
     this.glow = new GlowParticles(s, { max: 2500 });
+
+    // landing guide ring (where the layer will land)
+    this.guide = new THREE.Mesh(
+      new THREE.RingGeometry(R * 0.93, R * 1.0, 72),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
+    );
+    this.guide.rotation.x = -Math.PI / 2;
+    this.guide.renderOrder = 5;
+    this.guide.visible = false;
+    s.add(this.guide);
+    this.guideDot = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), this.guide.material);
+    this.guideDot.rotation.x = -Math.PI / 2;
+    this.guideDot.renderOrder = 5;
+    s.add(this.guideDot);
 
     // reusable bow for the carried layer
     const bowMat = new THREE.MeshPhysicalMaterial({ color: 0xff3d8b, roughness: 0.3, clearcoat: 1, sheen: 1, sheenColor: 0xffffff });
@@ -581,6 +595,20 @@ export class CakeTowerScene extends BaseScene {
         }
       }
     }
+    // landing guide
+    const showGuide = this.mode === 'play' && cur && (cur.state === 'carry' || cur.state === 'enter' || cur.state === 'drop');
+    this.guide.visible = this.guideDot.visible = !!showGuide;
+    if (showGuide) {
+      const sup = this._supportAt(this.layers.length - 1);
+      const d = Math.hypot(cur.x - sup.x, cur.z - sup.z);
+      const gy = this.baseY + this.topY + 0.075;
+      this.guide.position.set(cur.x, gy, cur.z);
+      this.guideDot.position.set(cur.x, gy + 0.001, cur.z);
+      const col = d < PERFECT ? 0xffd34d : d > sup.r * 0.97 ? 0xff5c7a : 0xffffff;
+      this.guide.material.color.set(col);
+      this.guide.material.opacity = d < PERFECT ? 0.95 : 0.55 + Math.sin(t * 6) * 0.1;
+    }
+
     // landing squash for recent layers
     for (const l of this.layers) {
       if (l.landT < 1) {
