@@ -396,7 +396,7 @@ export class FinaleScene extends BaseScene {
     this.mascot.setState('idle');
     const name = this.game.config.name;
     this.ui.finaleLyrics.innerHTML = `<span class="w on">Make a wish, ${name}! ✨</span>`;
-    const micOK = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const micOK = !window.__NO_MIC__ && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     this.ui.finaleBottom.innerHTML = `
       <div class="finale-prompt">Now blow out the candles! 🕯️<small>Blow into your microphone, hold the button, or tap the candles</small></div>
       <div class="blow-meter"><div id="blow-fill"></div></div>

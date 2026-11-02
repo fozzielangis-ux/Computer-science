@@ -147,7 +147,7 @@ export class BalloonPopScene extends BaseScene {
   resize(w, h) {
     const aspect = w / h;
     this.camera.aspect = aspect;
-    this.camera.fov = fitFov(46, aspect, 54);
+    this.camera.fov = fitFov(46, aspect, aspect < 0.8 ? 42 : 54);
     this.camera.updateProjectionMatrix();
     this.camera.position.set(0, 2.4, 9.5);
     this.camera.lookAt(0, 2.4, 0);

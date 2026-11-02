@@ -195,7 +195,7 @@ export class TitleScene extends BaseScene {
   resize(w, h) {
     const aspect = w / h;
     this.camera.aspect = aspect;
-    this.camera.fov = fitFov(38, aspect, 56);
+    this.camera.fov = fitFov(38, aspect, aspect < 0.8 ? 50 : 56);
     this.camera.updateProjectionMatrix();
     this.glow?.resize();
     // on tall screens push the word a bit higher so the buttons have room
@@ -256,11 +256,11 @@ export class TitleScene extends BaseScene {
     const portraitLift = this.portrait ? 0.9 : 0;
     const tx = Math.sin(t * 0.15) * 0.8 + this.pointer.x * 0.7;
     const ty = (menu ? 3.6 : 2.3) + this.pointer.y * 0.25 - portraitLift * 0.3;
-    const tz = menu ? 11 : 8.4 + (this.portrait ? 1.6 : 0);
+    const tz = menu ? 11 : 8.4 + (this.portrait ? 0.8 : 0);
     const intro = easeOutCubic(Math.min(1, this.introT / 2.5));
     this.camPos.set(damp(this.camPos.x, tx, 2, dt), damp(this.camPos.y, ty, 2, dt), damp(this.camPos.z, tz + (1 - intro) * 4, 2, dt));
     this.camera.position.copy(this.camPos);
-    this.camLook.set(0, menu ? 3.4 : 2.05 + portraitLift * 0.55, 0);
+    this.camLook.set(0, menu ? 3.4 : 2.05 - portraitLift * 0.75, 0);
     this.camera.lookAt(this.camLook);
 
     // foil letters bob, sway and spin when tapped

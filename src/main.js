@@ -173,7 +173,7 @@ class Game {
   bindUI() {
     const ui = this.ui;
     ui.on('home', () => {
-      if (this.state === 'playing' || this.state === 'countdown') this.pause();
+      if (this.state === 'playing') this.pause();
       else this.showMenu();
     });
     ui.on('startTour', () => {
