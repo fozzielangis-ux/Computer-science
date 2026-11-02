@@ -9,7 +9,7 @@ let _knotGeo = null;
 export function balloonGeometry() {
   if (_balloonGeo) return _balloonGeo;
   const pts = [];
-  const N = 40;
+  const N = 32;
   for (let i = 0; i <= N; i++) {
     const s = i / N;
     const th = s * Math.PI;
@@ -21,7 +21,7 @@ export function balloonGeometry() {
   }
   // small neck going into the knot
   pts[0].set(0.035, -1.12);
-  const geo = new THREE.LatheGeometry(pts, 48, -Math.PI, Math.PI * 2);
+  const geo = new THREE.LatheGeometry(pts, 40, -Math.PI, Math.PI * 2);
   geo.computeVertexNormals();
   _balloonGeo = geo;
   return geo;
@@ -160,21 +160,22 @@ export function starGeometry() {
   return geo;
 }
 
-let _cloudGeo = null;
-export function cloudGeometry() {
-  if (_cloudGeo) return _cloudGeo;
+const _cloudGeos = {};
+export function cloudGeometry(detail = 'high') {
+  if (_cloudGeos[detail]) return _cloudGeos[detail];
+  const [ws, hs] = detail === 'high' ? [24, 16] : [13, 9];
   const parts = [
     [0, 0.1, 0, 0.62], [-0.55, -0.05, 0.05, 0.45], [0.55, -0.02, 0.0, 0.48], [-0.25, 0.42, -0.05, 0.42],
     [0.3, 0.38, 0.0, 0.4], [0.0, -0.25, 0.15, 0.42], [-0.85, -0.2, 0, 0.3], [0.88, -0.18, 0, 0.32],
   ];
   const geos = parts.map(([x, y, z, r]) => {
-    const g = new THREE.SphereGeometry(r, 24, 16);
+    const g = new THREE.SphereGeometry(r, ws, hs);
     g.translate(x, y, z);
     return g;
   });
-  _cloudGeo = mergeGeometries(geos);
+  _cloudGeos[detail] = mergeGeometries(geos);
   geos.forEach((g) => g.dispose());
-  return _cloudGeo;
+  return _cloudGeos[detail];
 }
 
 // A grumpy storm cloud balloon (avoid popping these!)

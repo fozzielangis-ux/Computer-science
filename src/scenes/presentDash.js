@@ -47,18 +47,18 @@ export class PresentDashScene extends BaseScene {
     ]));
     this.sky.renderOrder = -1;
     s.add(this.sky);
-    s.fog = new THREE.Fog(0xffb6c2, 55, 165);
-    const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDotTexture(), color: new THREE.Color(1.0, 0.75, 0.55).multiplyScalar(3), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, transparent: true }));
+    s.fog = new THREE.Fog(0xffb6c2, 70, 190);
+    const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDotTexture(), color: new THREE.Color(1.0, 0.72, 0.55).multiplyScalar(1.8), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, transparent: true }));
     sun.position.set(0, 9, -170);
-    sun.scale.setScalar(90);
+    sun.scale.setScalar(75);
     s.add(sun);
-    const sunCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDotTexture(), color: new THREE.Color(1.0, 0.95, 0.8).multiplyScalar(4), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, transparent: true }));
+    const sunCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDotTexture(), color: new THREE.Color(1.0, 0.92, 0.78).multiplyScalar(3), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, transparent: true }));
     sunCore.position.set(0, 9, -169);
     sunCore.scale.setScalar(26);
     s.add(sunCore);
 
     s.add(new THREE.HemisphereLight(0xffeaf5, 0x8f6cff, 0.85));
-    const light = new THREE.DirectionalLight(0xffe2c4, 2.9);
+    const light = new THREE.DirectionalLight(0xffe2c4, 2.4);
     light.castShadow = true;
     light.shadow.mapSize.set(1024, 1024);
     Object.assign(light.shadow.camera, { left: -6, right: 6, top: 8, bottom: -10, near: 1, far: 40 });
@@ -105,7 +105,7 @@ export class PresentDashScene extends BaseScene {
       g.closePath();
       g.fill();
     }, { repeat: [3, 1] });
-    const topMat = new THREE.MeshPhysicalMaterial({ map: topTex, roughness: 0.55, clearcoat: 0.3, clearcoatRoughness: 0.4, sheen: 0.4, sheenColor: 0xffffff });
+    const topMat = new THREE.MeshStandardMaterial({ map: topTex, roughness: 0.75, envMapIntensity: 0.6 });
     const sideMat = new THREE.MeshStandardMaterial({ map: sideTex, roughness: 0.6 });
     const bottomMat = new THREE.MeshStandardMaterial({ color: 0xf2b37a, roughness: 0.8 });
     const slabGeo = new THREE.BoxGeometry(6, 0.9, TILE_LEN);
@@ -144,7 +144,7 @@ export class PresentDashScene extends BaseScene {
     const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, emissive: 0xffc8de, emissiveIntensity: 0.35 });
     this.clouds = [];
     for (let i = 0; i < 46; i++) {
-      const c = new THREE.Mesh(cloudGeometry(), cloudMat);
+      const c = new THREE.Mesh(cloudGeometry('low'), cloudMat);
       this._placeCloud(c, rand(-130, 20));
       s.add(c);
       this.clouds.push(c);
@@ -174,7 +174,7 @@ export class PresentDashScene extends BaseScene {
         y += layer.userData.topY;
         cake.add(layer);
       });
-      const base = new THREE.Mesh(cloudGeometry(), cloudMat);
+      const base = new THREE.Mesh(cloudGeometry('low'), cloudMat);
       base.scale.set(2.6, 1.2, 2.6);
       base.position.y = -0.4;
       cake.add(base);
@@ -364,10 +364,10 @@ export class PresentDashScene extends BaseScene {
   _placeDecor(d, z) {
     const side = Math.random() < 0.5 ? -1 : 1;
     const k = d.userData.kind;
-    if (k === 'lolly') d.position.set(side * rand(4.2, 8), rand(-5, -2.5), z);
-    else if (k === 'cane') d.position.set(side * rand(4.0, 7), rand(-4.5, -2.5), z);
+    if (k === 'lolly') d.position.set(side * rand(5.6, 10), rand(-5.5, -3), z);
+    else if (k === 'cane') d.position.set(side * rand(4.8, 8), rand(-5, -3), z);
     else if (k === 'cake') d.position.set(side * rand(9, 15), rand(-4, -2), z);
-    else d.position.set(side * rand(4.5, 9), rand(0.5, 3), z);
+    else d.position.set(side * rand(5, 9.5), rand(0.5, 3), z);
     d.rotation.y = k === 'cane' ? (side > 0 ? Math.PI : 0) : rand(0, Math.PI * 2);
     if (k === 'lolly') d.rotation.z = side * rand(0.05, 0.2);
   }

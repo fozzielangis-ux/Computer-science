@@ -152,7 +152,7 @@ export class CakeTowerScene extends BaseScene {
     const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, emissive: 0xffe6f0, emissiveIntensity: 0.25 });
     this.clouds = [];
     for (let i = 0; i < 18; i++) {
-      const c = new THREE.Mesh(cloudGeometry(), cloudMat);
+      const c = new THREE.Mesh(cloudGeometry('low'), cloudMat);
       const a = rand(0, Math.PI * 2), d = rand(7, 16);
       c.position.set(Math.cos(a) * d, rand(7, 22), Math.sin(a) * d);
       c.scale.set(rand(1.6, 3), rand(1, 1.6), rand(1.4, 2.2));
