@@ -685,7 +685,9 @@ var LF = globalThis.LF || (globalThis.LF = {});
 
   // ================================================================ boot
   function resize() {
-    const s = Math.min(window.innerWidth / VW, window.innerHeight / VH);
+    const host = document.getElementById('stage');
+    const aw = host ? host.clientWidth : window.innerWidth, ah = host ? host.clientHeight : window.innerHeight;
+    const s = Math.max(0.1, Math.min(aw / VW, ah / VH));
     canvas.style.width = Math.floor(VW * s) + 'px'; canvas.style.height = Math.floor(VH * s) + 'px';
   }
   window.addEventListener('resize', resize);

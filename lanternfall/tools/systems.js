@@ -33,6 +33,7 @@ const OUT = process.env.SHOTS || path.join(__dirname, '..', 'shots');
         for (let i = 0; i < room.tiles.length; i++) { const v = room.tiles[i]; if (v === LF.TILE.BR || v === LF.TILE.SL || v === LF.TILE.KY || v === LF.TILE.SE || v === LF.TILE.CR) room.tiles[i] = 0; }
         G.enemies = []; G.boss = null; G.player.inv = 99;
 
+        if (r.f.grates && d.side === 'B') LF.test.run(4);
         LF.test.run(frames, hold, press);
         n++;
         if (G.room.def.id !== d.to) fails.push(`${r.id} ${d.side}${d.g} -> ${d.to} ended in ${G.room.def.id} at ${Math.round(G.player.x)},${Math.round(G.player.y)}`);
