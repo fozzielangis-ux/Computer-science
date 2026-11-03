@@ -299,7 +299,12 @@ var LF = globalThis.LF || (globalThis.LF = {});
     const rew = LF.BOSSES[b.id].reward;
     if (b.id === 'ysolde') { G.timer(1.5, () => LF.UI.ending()); G.writeSave(); return; }
     G.room.unlockDoors();
-    if (rew) G.items.push(new LF.Item({ key: 'boss:' + b.id, t: 'ability', id: rew, x: LF.clamp(b.cx, 4 * T, (G.room.W - 4) * T), y: (G.room.G0 - 2) * T }));
+    if (rew) {
+      let x = LF.clamp(b.cx, 8 * T, (G.room.W - 8) * T);
+      const solidBelow = (px) => { const tx = Math.floor(px / T); for (let d = -1; d <= 1; d++) if (G.room.tile(tx + d, G.room.G0) === TL.E) return false; return true; };
+      if (!solidBelow(x)) { for (let k = 1; k < G.room.W; k++) { if (solidBelow(x + k * T)) { x += k * T; break; } if (solidBelow(x - k * T)) { x -= k * T; break; } } }
+      G.items.push(new LF.Item({ key: 'boss:' + b.id, t: 'ability', id: rew, x, y: (G.room.G0 - 2) * T }));
+    }
     LF.audio.playMusic(LF.REGIONS[G.room.def.region].music);
     G.writeSave();
   };
@@ -337,7 +342,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     return best;
   };
   G.interact = (it) => {
-    const S = G.S;
+    const S = G.S; if (!it) return;
     if (it.kind === 'bench') G.sitBench();
     else if (it.kind === 'npc') { const n = it.o, d = LF.NPCS[n.id]; const res = d.talk(S, G); LF.UI.dialog(d.name, res.lines, res.then, n.id); G.writeSave(); }
     else if (it.kind === 'lore') { if (!S.lore.includes(it.o.id)) { S.lore.push(it.o.id); G.writeSave(); } LF.UI.dialog(null, [LF.LORE[it.o.id] || '...'], null, 'lore'); }
@@ -369,7 +374,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
       else { const st = { x: 6 * T, y: (G.room.G0) * T - p.h }; p.x = st.x; p.y = st.y; }
       p.vx = 0; p.vy = 0; p.dead = false; p.inv = 1;
     } else if (how === 'start') { p.x = 5 * T; p.y = 2 * T; p.vx = 0; p.vy = 0; }
-    else if (pos) { p.x = pos.x; p.y = pos.y; }
+    else if (pos) { p.x = pos.x; p.y = pos.y; p.sitting = false; }
+    p.onGround = false; p.dashT = 0; p.slam = false; p.wall = 0; p.atkT = 0; p.chargeT = 0; p.charged = false; p.focusing = false; p.frozen = 0;
     // never leave the player embedded in a wall: break secret walls they came through, else nudge free
     for (let k = 0; k < 4; k++) {
       const c = p.collides(G, 0, p.bottom); if (!c) break;
@@ -402,7 +408,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
   G.checkTransition = () => {
     const p = G.player, rm = G.room, W = rm.W * T, H = rm.H * T;
     let side = null;
-    if (p.cx < 0) side = 'L'; else if (p.cx > W) side = 'R'; else if (p.y + p.h * 0.5 < 0) side = 'T'; else if (p.y > H) side = 'B';
+    if (p.cx < 0) side = 'L'; else if (p.cx > W) side = 'R'; else if (p.y < -2) side = 'T'; else if (p.y > H) side = 'B';
     if (!side) return;
     const def = rm.def, ox = def.x * CW * T, oy = def.y * CH * T;
     const gx = ox + p.cx, gy = oy + p.y + p.h / 2;
@@ -427,7 +433,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     let x = p.cx - VW / 2 + p.face * 50, y = p.cy - VH / 2 - 30;
     if (p.onGround && LF.input.held('down') && Math.abs(p.vx) < 10 && !p.focusing) y += 140;
     if (p.onGround && LF.input.held('up') && Math.abs(p.vx) < 10) y -= 120;
-    if (G.boss && G.boss.active) x = LF.lerp(x, G.boss.cx - VW / 2, 0.25);
+    if (G.boss && G.boss.active && !G.boss.hidden) x = LF.lerp(x, G.boss.cx - VW / 2, 0.35);
     x = LF.clamp(x, 0, rm.W * T - VW); y = LF.clamp(y, 0, rm.H * T - VH);
     return { x, y };
   };
@@ -583,16 +589,14 @@ var LF = globalThis.LF || (globalThis.LF = {});
     if (G.shakeT > 0) { sx = (R() - 0.5) * G.shakeA * 2; sy = (R() - 0.5) * G.shakeA * 2; }
     const cx = Math.round(cam.x + sx), cy = Math.round(cam.y + sy);
     // sky
-    const g = c.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, reg.bg[0]); g.addColorStop(1, reg.bg[1]);
-    c.fillStyle = g; c.fillRect(0, 0, VW, VH);
+
     // parallax
-    for (const L of RN.bgLayers(rm.def.region)) {
-      const ox = -((cx * L.f) % VW + VW) % VW, oy = -LF.clamp(cy * L.f * 0.4, 0, 120);
+    RN.bgLayers(rm.def.region).forEach((L, li) => {
+      const ox = Math.round(-((cx * L.f) % VW + VW) % VW), oy = li === 0 ? 0 : Math.round(-LF.clamp(cy * L.f * 0.4, 0, 120));
       c.drawImage(L.cv, ox, oy); c.drawImage(L.cv, ox + VW, oy);
       if (oy < 0) { c.drawImage(L.cv, ox, oy + VH); c.drawImage(L.cv, ox + VW, oy + VH); }
-    }
+    });
     c.save(); c.translate(-cx, -cy);
-    c.drawImage(rm.back, cx, cy, VW, VH, cx, cy, VW, VH);
     // back props
     for (const p of rm.rd.props) if (p.x > cx - 120 && p.x < cx + VW + 120 && p.y > cy - 250 && p.y < cy + VH + 250) RN.drawProp(c, p, reg, t);
     c.drawImage(rm.canvas, cx, cy, VW, VH, cx, cy, VW, VH);
@@ -605,7 +609,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
     for (const s of rm.rd.signs) RN.drawSign(c, s);
     for (const n of G.npcs) { if (n.id === 'cask' && LF.npcStage('cask', G.S) === 2) RN.drawCaskCorpse(c, n.x, n.y); else RN.drawNPC(c, n, G); }
     for (const it of G.items) RN.drawItem(c, it, G);
-    for (const f of G.flames) { const k = f.life / f.max; c.save(); c.globalCompositeOperation = 'lighter'; const gg = c.createRadialGradient(f.x, f.y - 10, 0, f.x, f.y - 10, 22); gg.addColorStop(0, `rgba(255,220,120,${0.8 * k})`); gg.addColorStop(1, 'rgba(255,80,20,0)'); c.fillStyle = gg; c.beginPath(); c.arc(f.x, f.y - 10, 22, 0, Math.PI * 2); c.fill(); c.restore(); }
+    RN.drawCovers(c, G);
+    if (G.flames.length) { c.save(); c.globalCompositeOperation = 'lighter'; const fs = RN.spr('#ffb347'); for (const f of G.flames) { c.globalAlpha = 0.85 * f.life / f.max; c.drawImage(fs, f.x - 24, f.y - 34, 48, 48); } c.restore(); }
     for (const gl of G.glims) { c.save(); c.translate(gl.x, gl.y); c.scale(Math.cos(gl.spin), 1); c.fillStyle = gl.v >= 10 ? '#fff0a0' : '#f4eccc'; c.beginPath(); const s = gl.v >= 10 ? 7 : 5; c.moveTo(0, -s); c.lineTo(s * 0.7, 0); c.lineTo(0, s); c.lineTo(-s * 0.7, 0); c.closePath(); c.fill(); c.restore(); }
     for (const e of G.enemies) RN.drawEnemy(c, e, G);
     if (G.boss) { c.save(); if (G.boss.flash > 0) c.filter = 'brightness(2.2)'; G.boss.draw(c, G); c.restore(); }
@@ -699,14 +704,17 @@ LF.test = {
     const I = LF.input, G = LF.G;
     const codes = (acts) => acts.map(a => I.map[a][0]);
     for (let i = 0; i < n; i++) {
-      I.down = new Set([...codes(hold), ...(i < 3 ? codes(press) : [])]);
-      I.pressed = new Set(i === 0 ? [...codes(press), ...codes(hold)] : []);
-      I.released.clear();
+      const down = new Set([...codes(hold), ...(i < 3 ? codes(press) : [])]);
+      const prev = this.prevDown || new Set();
+      I.pressed = new Set([...down].filter(k => !prev.has(k)));
+      if (i === 0) for (const k of codes(press)) I.pressed.add(k);
+      I.released = new Set([...prev].filter(k => !down.has(k)));
+      I.down = down; this.prevDown = down;
       if (this.autoClose) LF.UI.stack = LF.UI.stack.filter(x => !['card', 'ability', 'dialog'].includes(x.name));
       G.tick(1 / 60);
     }
-    I.down.clear(); I.pressed.clear();
   },
+  release() { LF.input.down.clear(); this.prevDown = new Set(); },
   grantAll() { const S = LF.G.S; S.abilities = Object.keys(LF.ABILITIES); LF.G.calcStats(); },
   place(id, tx, ty) { const G = LF.G; LF.UI.stack = []; G.enterRoom(id, 'door', { x: tx * 32 + 6, y: ty * 32 - 41 }); G.player.vx = 0; G.player.vy = 0; },
 };

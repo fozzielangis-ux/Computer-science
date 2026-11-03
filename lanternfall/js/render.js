@@ -8,40 +8,54 @@ var LF = globalThis.LF || (globalThis.LF = {});
   const mix = (h1, h2, t) => { const a = parseInt(h1.slice(1), 16), b = parseInt(h2.slice(1), 16); const r = (a >> 16 & 255) * (1 - t) + (b >> 16 & 255) * t, g = (a >> 8 & 255) * (1 - t) + (b >> 8 & 255) * t, bl = (a & 255) * (1 - t) + (b & 255) * t; return `rgb(${r | 0},${g | 0},${bl | 0})`; };
   LF.hexA = hexA; LF.mix = mix;
   const RN = LF.Render = {};
+  const sprCache = new Map();
+  // cached soft radial sprite (white→transparent or colour→transparent)
+  RN.spr = function (col) {
+    if (sprCache.has(col)) return sprCache.get(col);
+    const cv = mk(128, 128), c = cv.getContext('2d'), g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+    const base = col.startsWith('#') ? col : '#ffffff';
+    g.addColorStop(0, hexA(base, 1)); g.addColorStop(0.45, hexA(base, 0.45)); g.addColorStop(1, hexA(base, 0));
+    c.fillStyle = g; c.fillRect(0, 0, 128, 128); sprCache.set(col, cv); return cv;
+  };
 
   // ================================================================= terrain pre-render
   RN.renderRoom = function (room) {
     const rd = room.rd, W = rd.W, H = rd.H, reg = LF.REGIONS[room.def.region], tiles = room.tiles;
     const cv = room.canvas || mk(W * T, H * T), c = cv.getContext('2d');
     c.clearRect(0, 0, cv.width, cv.height);
+    const tcv = room.tcanvas || (room.tcanvas = mk(W * T, H * T)), tc0 = tcv.getContext('2d');
+    tc0.clearRect(0, 0, tcv.width, tcv.height);
     const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? TL.S : tiles[y * W + x];
     const solid = (v) => v === TL.S || v === TL.BR || v === TL.SL;
     const rg = LF.rng('art:' + room.def.id);
+    const mainC = c; { /* draw terrain on its own layer first */ }
+    const c2 = tc0;
     // depth map
     const depth = new Uint8Array(W * H).fill(9);
     const q = [];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!solid(get(x, y))) { depth[y * W + x] = 0; q.push(x, y); }
     for (let i = 0; i < q.length; i += 2) { const x = q[i], y = q[i + 1], d = depth[y * W + x]; if (d >= 4) continue; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; const k = yy * W + xx; if (depth[k] > d + 1) { depth[k] = d + 1; q.push(xx, yy); } } }
     const dark = mix(reg.rock, '#000000', 0.55);
-    // base fill
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const v = get(x, y); if (!solid(v)) continue;
-      const d = depth[y * W + x];
-      c.fillStyle = mix(reg.rock, dark, Math.min(1, (d - 1) / 3));
-      c.fillRect(x * T - 0.5, y * T - 0.5, T + 1, T + 1);
-    }
+    // base fill (flat), then smooth depth shading from a 1px-per-tile map scaled up with smoothing
+    c2.fillStyle = reg.rock;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (solid(get(x, y))) c2.fillRect(x * T - 0.5, y * T - 0.5, T + 1, T + 1);
+    const dm = mk(W, H), dctx = dm.getContext('2d'), img = dctx.createImageData(W, H);
+    for (let i = 0; i < W * H; i++) { const d = depth[i]; img.data[i * 4 + 3] = d === 0 ? 0 : Math.min(255, (d - 1) * 62); }
+    dctx.putImageData(img, 0, 0);
+    c2.save(); c2.globalCompositeOperation = 'source-atop'; c2.imageSmoothingEnabled = true; c2.imageSmoothingQuality = 'high';
+    c2.globalAlpha = 0.75; c2.drawImage(dm, -T / 2, -T / 2, W * T + T, H * T + T); c2.restore();
     // texture speckles
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       if (!solid(get(x, y)) || depth[y * W + x] > 3) continue;
       const n = 2 + (rg() * 3 | 0);
       for (let i = 0; i < n; i++) {
-        c.fillStyle = rg() < 0.5 ? hexA(reg.rockHi, 0.18) : 'rgba(0,0,0,0.18)';
+        c2.fillStyle = rg() < 0.5 ? hexA(reg.rockHi, 0.18) : 'rgba(0,0,0,0.18)';
         const px = x * T + rg() * T, py = y * T + rg() * T, r = 1.5 + rg() * 4;
-        c.beginPath(); c.ellipse(px, py, r * 1.4, r, rg() * 3, 0, TAU); c.fill();
+        c2.beginPath(); c2.ellipse(px, py, r * 1.4, r, rg() * 3, 0, TAU); c2.fill();
       }
     }
     // round outer corners
-    c.globalCompositeOperation = 'destination-out';
+    c2.globalCompositeOperation = 'destination-out';
     const rr = 11;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       if (!solid(get(x, y))) continue;
@@ -49,53 +63,53 @@ var LF = globalThis.LF || (globalThis.LF = {});
       const corner = (cx, cy, sx, sy) => {
         const ox = cx + sx * rr, oy = cy + sy * rr, a0 = Math.atan2(-sy, 0), a1 = Math.atan2(0, -sx);
         let dlt = a1 - a0; while (dlt <= -Math.PI) dlt += TAU; while (dlt > Math.PI) dlt -= TAU;
-        c.beginPath(); c.moveTo(cx, cy); c.lineTo(ox, cy); c.arc(ox, oy, rr, a0, a1, dlt < 0); c.closePath(); c.fill();
+        c2.beginPath(); c2.moveTo(cx, cy); c2.lineTo(ox, cy); c2.arc(ox, oy, rr, a0, a1, dlt < 0); c2.closePath(); c2.fill();
       };
       if (u && l) corner(x * T, y * T, 1, 1);
       if (u && r) corner((x + 1) * T, y * T, -1, 1);
       if (d && l) corner(x * T, (y + 1) * T, 1, -1);
       if (d && r) corner((x + 1) * T, (y + 1) * T, -1, -1);
     }
-    c.globalCompositeOperation = 'source-over';
+    c2.globalCompositeOperation = 'source-over';
     // edges
     const wob = (a) => (rg() - 0.5) * a;
-    c.lineCap = 'round';
+    c2.lineCap = 'round';
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = get(x, y); if (!solid(v)) continue;
       const u = !solid(get(x, y - 1)), d = !solid(get(x, y + 1)), l = !solid(get(x - 1, y)), r = !solid(get(x + 1, y));
       const x0 = x * T + (l ? rr * (u || d ? 1 : 0) : 0), x1 = (x + 1) * T - (r ? rr * (u || d ? 1 : 0) : 0);
       if (u) {
-        c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 5; c.beginPath(); c.moveTo(x0, y * T + 1); c.lineTo(x1, y * T + 1 + wob(1)); c.stroke();
-        c.strokeStyle = reg.rim; c.lineWidth = 3; c.beginPath(); c.moveTo(x0, y * T + 2); c.quadraticCurveTo((x0 + x1) / 2, y * T + 2 + wob(2), x1, y * T + 2); c.stroke();
-        c.strokeStyle = hexA(reg.rockHi, 0.6); c.lineWidth = 2; c.beginPath(); c.moveTo(x0 + 2, y * T + 6); c.lineTo(x1 - 2, y * T + 6 + wob(2)); c.stroke();
-        RN.topDeco(c, reg, x * T, y * T, rg);
+        c2.strokeStyle = 'rgba(0,0,0,0.6)'; c2.lineWidth = 5; c2.beginPath(); c2.moveTo(x0, y * T + 1); c2.lineTo(x1, y * T + 1 + wob(1)); c2.stroke();
+        c2.strokeStyle = reg.rim; c2.lineWidth = 3; c2.beginPath(); c2.moveTo(x0, y * T + 2); c2.quadraticCurveTo((x0 + x1) / 2, y * T + 2 + wob(2), x1, y * T + 2); c2.stroke();
+        c2.strokeStyle = hexA(reg.rockHi, 0.6); c2.lineWidth = 2; c2.beginPath(); c2.moveTo(x0 + 2, y * T + 6); c2.lineTo(x1 - 2, y * T + 6 + wob(2)); c2.stroke();
+        RN.topDeco(c2, reg, x * T, y * T, rg);
       }
-      if (d) { c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(x0, (y + 1) * T - 6, x1 - x0, 6); c.strokeStyle = 'rgba(0,0,0,0.7)'; c.lineWidth = 3; c.beginPath(); c.moveTo(x0, (y + 1) * T - 1); c.lineTo(x1, (y + 1) * T - 1); c.stroke(); RN.bottomDeco(c, reg, x * T, (y + 1) * T, rg); }
+      if (d) { c2.fillStyle = 'rgba(0,0,0,0.35)'; c2.fillRect(x0, (y + 1) * T - 6, x1 - x0, 6); c2.strokeStyle = 'rgba(0,0,0,0.7)'; c2.lineWidth = 3; c2.beginPath(); c2.moveTo(x0, (y + 1) * T - 1); c2.lineTo(x1, (y + 1) * T - 1); c2.stroke(); RN.bottomDeco(c2, reg, x * T, (y + 1) * T, rg); }
       const y0 = y * T + (u ? rr : 0), y1 = (y + 1) * T - (d ? rr : 0);
-      if (l) { c.strokeStyle = 'rgba(0,0,0,0.65)'; c.lineWidth = 3; c.beginPath(); c.moveTo(x * T + 1, y0); c.lineTo(x * T + 1 + wob(2), y1); c.stroke(); c.strokeStyle = hexA(reg.rockHi, 0.35); c.lineWidth = 2; c.beginPath(); c.moveTo(x * T + 4, y0); c.lineTo(x * T + 4, y1); c.stroke(); }
-      if (r) { c.strokeStyle = 'rgba(0,0,0,0.65)'; c.lineWidth = 3; c.beginPath(); c.moveTo((x + 1) * T - 1, y0); c.lineTo((x + 1) * T - 1 + wob(2), y1); c.stroke(); }
-      if (u && l) { c.strokeStyle = reg.rim; c.lineWidth = 3; c.beginPath(); c.arc(x * T + rr, y * T + rr, rr - 1, Math.PI, Math.PI * 1.5); c.stroke(); }
-      if (u && r) { c.strokeStyle = reg.rim; c.lineWidth = 3; c.beginPath(); c.arc((x + 1) * T - rr, y * T + rr, rr - 1, Math.PI * 1.5, TAU); c.stroke(); }
-      if (v === TL.BR) { c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x * T + 8, y * T + 6); c.lineTo(x * T + 16, y * T + 16); c.lineTo(x * T + 12, y * T + 26); c.stroke(); }
-      if (v === TL.SL) { c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 2; c.beginPath(); c.moveTo(x * T + 4, y * T + 4); c.lineTo(x * T + 14, y * T + 18); c.lineTo(x * T + 26, y * T + 10); c.moveTo(x * T + 14, y * T + 18); c.lineTo(x * T + 18, y * T + 30); c.stroke(); c.strokeStyle = hexA(reg.rim, 0.5); c.lineWidth = 1; c.stroke(); }
+      if (l) { c2.strokeStyle = 'rgba(0,0,0,0.65)'; c2.lineWidth = 3; c2.beginPath(); c2.moveTo(x * T + 1, y0); c2.lineTo(x * T + 1 + wob(2), y1); c2.stroke(); c2.strokeStyle = hexA(reg.rockHi, 0.35); c2.lineWidth = 2; c2.beginPath(); c2.moveTo(x * T + 4, y0); c2.lineTo(x * T + 4, y1); c2.stroke(); }
+      if (r) { c2.strokeStyle = 'rgba(0,0,0,0.65)'; c2.lineWidth = 3; c2.beginPath(); c2.moveTo((x + 1) * T - 1, y0); c2.lineTo((x + 1) * T - 1 + wob(2), y1); c2.stroke(); }
+      if (u && l) { c2.strokeStyle = reg.rim; c2.lineWidth = 3; c2.beginPath(); c2.arc(x * T + rr, y * T + rr, rr - 1, Math.PI, Math.PI * 1.5); c2.stroke(); }
+      if (u && r) { c2.strokeStyle = reg.rim; c2.lineWidth = 3; c2.beginPath(); c2.arc((x + 1) * T - rr, y * T + rr, rr - 1, Math.PI * 1.5, TAU); c2.stroke(); }
+      if (v === TL.BR) { c2.strokeStyle = 'rgba(0,0,0,0.25)'; c2.lineWidth = 1; c2.beginPath(); c2.moveTo(x * T + 8, y * T + 6); c2.lineTo(x * T + 16, y * T + 16); c2.lineTo(x * T + 12, y * T + 26); c2.stroke(); }
+      if (v === TL.SL) { c2.strokeStyle = 'rgba(0,0,0,0.6)'; c2.lineWidth = 2; c2.beginPath(); c2.moveTo(x * T + 4, y * T + 4); c2.lineTo(x * T + 14, y * T + 18); c2.lineTo(x * T + 26, y * T + 10); c2.moveTo(x * T + 14, y * T + 18); c2.lineTo(x * T + 18, y * T + 30); c2.stroke(); c2.strokeStyle = hexA(reg.rim, 0.5); c2.lineWidth = 1; c2.stroke(); }
     }
     // static special tiles
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = get(x, y), px = x * T, py = y * T;
-      if (v === TL.P) RN.ledge(c, reg, px, py, get(x - 1, y) !== TL.P && get(x - 1, y) !== TL.CU, get(x + 1, y) !== TL.P && get(x + 1, y) !== TL.CU, rg);
-      else if (v === TL.SPK) RN.spikes(c, reg, px, py, rg);
-      else if (v === TL.TH) RN.thorns(c, reg, px, py, rg);
-      else if (v === TL.CR) RN.crystalWall(c, px, py, rg, get(x, y - 1) !== TL.CR);
-      else if (v === TL.SE) RN.sealWall(c, px, py, rg, get(x, y - 1) !== TL.SE, get(x, y + 1) !== TL.SE);
-      else if (v === TL.KY) RN.keyGate(c, px, py, rg, x, y, get);
+      if (v === TL.P) RN.ledge(c2, reg, px, py, get(x - 1, y) !== TL.P && get(x - 1, y) !== TL.CU, get(x + 1, y) !== TL.P && get(x + 1, y) !== TL.CU, rg);
+      else if (v === TL.SPK) RN.spikes(c2, reg, px, py, rg);
+      else if (v === TL.TH) RN.thorns(c2, reg, px, py, rg);
+      else if (v === TL.CR) RN.crystalWall(c2, px, py, rg, get(x, y - 1) !== TL.CR);
+      else if (v === TL.SE) RN.sealWall(c2, px, py, rg, get(x, y - 1) !== TL.SE, get(x, y + 1) !== TL.SE);
+      else if (v === TL.KY) RN.keyGate(c2, px, py, rg, x, y, get);
     }
-    room.canvas = cv;
-    // backwall layer
     if (!room.back) {
       const bv = mk(W * T, H * T), b = bv.getContext('2d');
-      RN.backwall(b, room, reg, rg, get, solid);
+      RN.backwall(b, room, reg, LF.rng('back:' + room.def.id), get, solid);
       room.back = bv;
     }
+    mainC.drawImage(room.back, 0, 0); mainC.drawImage(tcv, 0, 0);
+    room.canvas = cv;
   };
 
   RN.topDeco = function (c, reg, x, y, rg) {
@@ -194,6 +208,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     const reg = LF.REGIONS[regId], rg = LF.rng('bg:' + regId), out = [];
     for (let L = 0; L < 3; L++) {
       const cv = mk(VW, VH), c = cv.getContext('2d');
+      if (L === 0) { const g = c.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, reg.bg[0]); g.addColorStop(1, reg.bg[1]); c.fillStyle = g; c.fillRect(0, 0, VW, VH); }
       const tone = mix(reg.bg[0], reg.rock, 0.3 + L * 0.25), dark = mix(reg.bg[1], '#000000', 0.2 + L * 0.2);
       const fog = mix(tone, reg.bg[0], 0.4 - L * 0.1);
       RN.drawBgStyle(c, reg, L, rg, L === 2 ? dark : fog);
@@ -257,6 +272,22 @@ var LF = globalThis.LF || (globalThis.LF = {});
     }
   };
 
+  // secret chamber covers: look like solid rock until their wall is broken, then fade away
+  RN.drawCovers = function (c, G) {
+    const room = G.room, reg = LF.REGIONS[room.def.region];
+    room.coverA = room.coverA || room.rd.covers.map(() => 1);
+    room.rd.covers.forEach((cv, i) => {
+      const open = room.tile(cv.kx, cv.ky) === TL.E || (cv.kx2 !== undefined && room.tile(cv.kx2, cv.ky) === TL.E);
+      if (open) room.coverA[i] = Math.max(0, room.coverA[i] - 0.04);
+      const a = room.coverA[i]; if (a <= 0) return;
+      const x = cv.x0 * T - 1, y = cv.y0 * T - 1, w = (cv.x1 - cv.x0 + 1) * T + 2, h = (cv.y1 - cv.y0 + 1) * T + 2;
+      c.save(); c.globalAlpha = a; c.fillStyle = mix(reg.rock, '#000000', 0.25); c.fillRect(x, y, w, h);
+      const rg = LF.rng('cover' + i + room.def.id);
+      for (let k = 0; k < w * h / 250; k++) { c.fillStyle = rg() < 0.5 ? hexA(reg.rockHi, 0.16) : 'rgba(0,0,0,0.16)'; c.beginPath(); c.ellipse(x + rg() * w, y + rg() * h, 2 + rg() * 4, 1.5 + rg() * 3, rg() * 3, 0, TAU); c.fill(); }
+      c.restore();
+    });
+  };
+
   // ================================================================= dynamic tiles (per frame)
   RN.drawDynamicTiles = function (c, G, cam) {
     const room = G.room, rd = room.rd, W = rd.W, reg = LF.REGIONS[room.def.region], t = G.time;
@@ -293,14 +324,14 @@ var LF = globalThis.LF || (globalThis.LF = {});
     switch (p.k) {
       case 'tuft': c.fillStyle = reg.bgs === 'forest' ? '#5a8a3a' : reg.bgs === 'volcano' ? '#3a2018' : hexA(reg.rockHi, 0.9); for (let i = 0; i < 5; i++) { const a = (i - 2) * 0.3 + Math.sin(t * 1.5 + p.x) * 0.08; c.save(); c.rotate(a); c.beginPath(); c.ellipse(0, -8 * s, 2, 9 * s, 0, 0, TAU); c.fill(); c.restore(); } break;
       case 'rock': c.fillStyle = reg.rockHi; c.beginPath(); c.ellipse(0, -5 * s, 12 * s, 7 * s, 0, Math.PI, 0); c.fill(); c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(3, -3 * s, 8 * s, 3 * s, 0, 0, Math.PI); c.fill(); break;
-      case 'lamp': c.fillStyle = '#1a1418'; c.fillRect(-2, -70 * s, 4, 70 * s); c.fillRect(-8, -72 * s, 16, 4); c.fillStyle = reg.accent; c.shadowColor = reg.accent; c.shadowBlur = 20; c.beginPath(); c.ellipse(0, -80 * s, 6, 9, 0, 0, TAU); c.fill(); c.shadowBlur = 0; c.strokeStyle = '#1a1418'; c.lineWidth = 2; c.strokeRect(-7, -90 * s, 14, 18); break;
+      case 'lamp': c.fillStyle = '#1a1418'; c.fillRect(-2, -70 * s, 4, 70 * s); c.fillRect(-8, -72 * s, 16, 4); c.fillStyle = reg.accent; c.beginPath(); c.ellipse(0, -80 * s, 6, 9, 0, 0, TAU); c.fill(); c.strokeStyle = '#1a1418'; c.lineWidth = 2; c.strokeRect(-7, -90 * s, 14, 18); break;
       case 'statue': c.fillStyle = mix(reg.rockHi, '#000000', 0.2); c.fillRect(-14 * s, -14, 28 * s, 14); c.beginPath(); c.ellipse(0, -40 * s, 12 * s, 26 * s, 0, 0, TAU); c.fill(); c.beginPath(); c.arc(0, -72 * s, 10 * s, 0, TAU); c.fill(); c.fillStyle = hexA(reg.accent, 0.5); c.beginPath(); c.arc(-3, -73 * s, 2, 0, TAU); c.arc(4, -73 * s, 2, 0, TAU); c.fill(); break;
-      case 'mushroom': c.fillStyle = '#d8d0b0'; c.fillRect(-3, -20 * s, 6, 20 * s); c.fillStyle = r < 0.5 ? '#c4f582' : '#e6c8ff'; c.shadowColor = c.fillStyle; c.shadowBlur = 16; c.beginPath(); c.ellipse(0, -22 * s, 16 * s, 9 * s, 0, Math.PI, 0); c.fill(); c.shadowBlur = 0; break;
+      case 'mushroom': c.fillStyle = '#d8d0b0'; c.fillRect(-3, -20 * s, 6, 20 * s); c.fillStyle = r < 0.5 ? '#c4f582' : '#e6c8ff'; c.beginPath(); c.ellipse(0, -22 * s, 16 * s, 9 * s, 0, Math.PI, 0); c.fill(); break;
       case 'column': c.fillStyle = mix(reg.rockHi, '#000000', 0.15); c.fillRect(-12 * s, -60 * s, 24 * s, 60 * s); c.fillRect(-16 * s, -66 * s, 32 * s, 8); c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = 2; for (let i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(i * 7 * s, -58 * s); c.lineTo(i * 7 * s, 0); c.stroke(); } c.fillStyle = hexA('#74e4d4', 0.7); c.fillRect(-2, -40 * s, 4, 4); break;
-      case 'crystal': for (let i = -1; i <= 1; i++) { const h = (30 + Math.abs(i) * -8 + r * 20) * s; c.fillStyle = i === 0 ? '#83f2ff' : '#b9a2ff'; c.shadowColor = '#83f2ff'; c.shadowBlur = 14; c.beginPath(); c.moveTo(i * 10 - 6, 0); c.lineTo(i * 12, -h); c.lineTo(i * 10 + 6, 0); c.fill(); } c.shadowBlur = 0; break;
-      case 'reed': c.strokeStyle = '#3a6a5a'; c.lineWidth = 2; for (let i = 0; i < 4; i++) { const sw = Math.sin(t * 1.2 + i + p.x * 0.01) * 4; c.beginPath(); c.moveTo(i * 5 - 8, 0); c.quadraticCurveTo(i * 5 - 8 + sw / 2, -25 * s, i * 5 - 8 + sw, -50 * s); c.stroke(); } c.fillStyle = '#a5ffff'; c.shadowColor = '#a5ffff'; c.shadowBlur = 10; c.beginPath(); c.arc(Math.sin(t * 1.2) * 4, -52 * s, 3, 0, TAU); c.fill(); c.shadowBlur = 0; break;
-      case 'vent': c.fillStyle = '#2c1b17'; c.beginPath(); c.moveTo(-18, 0); c.lineTo(-6, -16); c.lineTo(6, -16); c.lineTo(18, 0); c.fill(); c.fillStyle = '#ff8c4c'; c.shadowColor = '#ff8c4c'; c.shadowBlur = 16; c.fillRect(-5, -18, 10, 4); c.shadowBlur = 0; break;
-      case 'candle': c.fillStyle = '#e8dcc0'; for (let i = -1; i <= 1; i++) { const h = (14 + (i + 1) * 6 * r) * s; c.fillRect(i * 9 - 3, -h, 6, h); c.fillStyle = reg.accent; c.shadowColor = reg.accent; c.shadowBlur = 12; c.beginPath(); c.ellipse(i * 9, -h - 5 + Math.sin(t * 9 + i) * 1, 2.5, 5, 0, 0, TAU); c.fill(); c.shadowBlur = 0; c.fillStyle = '#e8dcc0'; } break;
+      case 'crystal': for (let i = -1; i <= 1; i++) { const h = (30 + Math.abs(i) * -8 + r * 20) * s; c.fillStyle = i === 0 ? '#83f2ff' : '#b9a2ff'; c.beginPath(); c.moveTo(i * 10 - 6, 0); c.lineTo(i * 12, -h); c.lineTo(i * 10 + 6, 0); c.fill(); } break;
+      case 'reed': c.strokeStyle = '#3a6a5a'; c.lineWidth = 2; for (let i = 0; i < 4; i++) { const sw = Math.sin(t * 1.2 + i + p.x * 0.01) * 4; c.beginPath(); c.moveTo(i * 5 - 8, 0); c.quadraticCurveTo(i * 5 - 8 + sw / 2, -25 * s, i * 5 - 8 + sw, -50 * s); c.stroke(); } c.fillStyle = '#a5ffff'; c.beginPath(); c.arc(Math.sin(t * 1.2) * 4, -52 * s, 3, 0, TAU); c.fill(); break;
+      case 'vent': c.fillStyle = '#2c1b17'; c.beginPath(); c.moveTo(-18, 0); c.lineTo(-6, -16); c.lineTo(6, -16); c.lineTo(18, 0); c.fill(); c.fillStyle = '#ff8c4c'; c.fillRect(-5, -18, 10, 4); break;
+      case 'candle': c.fillStyle = '#e8dcc0'; for (let i = -1; i <= 1; i++) { const h = (14 + (i + 1) * 6 * r) * s; c.fillRect(i * 9 - 3, -h, 6, h); c.fillStyle = reg.accent; c.beginPath(); c.ellipse(i * 9, -h - 5 + Math.sin(t * 9 + i) * 1, 2.5, 5, 0, 0, TAU); c.fill(); c.fillStyle = '#e8dcc0'; } break;
       case 'spire': c.fillStyle = '#0a0810'; c.beginPath(); c.moveTo(-10 * s, 0); c.lineTo(0, -70 * s); c.lineTo(10 * s, 0); c.fill(); c.fillStyle = hexA(reg.accent, 0.6 + Math.sin(t * 2 + p.x) * 0.3); c.beginPath(); c.arc(0, -40 * s, 3, 0, TAU); c.fill(); break;
       case 'vine': c.strokeStyle = reg.bgs === 'lake' ? '#2a5a50' : '#3f5b37'; c.lineWidth = 3; const len = 60 * s + r * 60, sw = Math.sin(t * 0.9 + p.x * 0.02) * 8; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(sw, len / 2, sw * 1.5, len); c.stroke(); c.fillStyle = reg.bgs === 'lake' ? '#3a7a6a' : '#5a8a3a'; for (let i = 1; i < 5; i++) { c.beginPath(); c.ellipse(sw * i / 4 * 1.2 + 4, len * i / 5, 5, 2.5, 0.6, 0, TAU); c.fill(); } break;
       case 'icicle': c.fillStyle = hexA('#b9a2ff', 0.8); c.beginPath(); c.moveTo(-7, 0); c.lineTo(0, 30 * s + r * 20); c.lineTo(7, 0); c.fill(); break;
@@ -394,7 +425,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     c.translate(e.cx + (e.shakeX || 0), e.y + e.h); c.scale(e.face || 1, 1);
     const w = e.w, h = e.h, st = d.style;
     c.lineWidth = 2.5; c.strokeStyle = '#0a080c';
-    const eyes = (x, y, r = 3, col = d.col2) => { c.fillStyle = fl ? '#fff' : col; c.shadowColor = col; c.shadowBlur = 8; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); c.shadowBlur = 0; };
+    const eyes = (x, y, r = 3, col = d.col2) => { c.fillStyle = hexA(col.startsWith('#') ? col : '#ffffff', 0.35); c.beginPath(); c.arc(x, y, r * 2.2, 0, TAU); c.fill(); c.fillStyle = fl ? '#fff' : col; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); };
     const legs = (n, spread, len, phase = 0) => { c.strokeStyle = '#0a080c'; c.lineWidth = 2.5; for (let i = 0; i < n; i++) { const lx = -spread / 2 + i * spread / (n - 1), sw = Math.sin(t * 12 + i * 2 + phase) * 4 * (Math.abs(e.vx) > 5 ? 1 : 0.2); c.beginPath(); c.moveTo(lx, -len); c.lineTo(lx + sw, 0); c.stroke(); } };
     switch (st) {
       case 'bug': case 'robed': {
@@ -522,8 +553,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
     if (look === 'bard') { c.fillStyle = '#1a1020'; c.beginPath(); c.arc(-5, hy, 3, 0, TAU); c.arc(5, hy, 3, 0, TAU); c.fill(); c.strokeStyle = '#1a1020'; c.lineWidth = 2; c.beginPath(); c.arc(0, hy + 5, 4, 0, Math.PI); c.stroke(); c.fillStyle = '#7a3a8a'; c.beginPath(); c.moveTo(-14, hy - 8); c.quadraticCurveTo(0, hy - 30, 16, hy - 10); c.fill(); }
     else if (look !== 'beetle') { c.fillStyle = '#0a080c'; c.beginPath(); c.ellipse(-4, hy, 2.5, 3.5, 0, 0, TAU); c.ellipse(4, hy, 2.5, 3.5, 0, 0, TAU); c.fill(); }
     else { c.fillStyle = d.col2; c.beginPath(); c.arc(4, hy, 2.5, 0, TAU); c.fill(); }
-    if (look === 'pilgrim') { c.strokeStyle = '#5a4a3a'; c.lineWidth = 3; c.beginPath(); c.moveTo(-bw - 6, 0); c.lineTo(-bw - 6, -bh - 30); c.stroke(); c.fillStyle = d.col2; c.shadowColor = d.col2; c.shadowBlur = 14; c.beginPath(); c.arc(-bw - 6, -bh - 34, 5, 0, TAU); c.fill(); c.shadowBlur = 0; }
-    if (look === 'hermit') { c.fillStyle = d.col2; c.shadowColor = d.col2; c.shadowBlur = 12; c.beginPath(); c.arc(bw, -bh * 0.5, 5, 0, TAU); c.fill(); c.shadowBlur = 0; }
+    if (look === 'pilgrim') { c.strokeStyle = '#5a4a3a'; c.lineWidth = 3; c.beginPath(); c.moveTo(-bw - 6, 0); c.lineTo(-bw - 6, -bh - 30); c.stroke(); c.fillStyle = d.col2;   c.beginPath(); c.arc(-bw - 6, -bh - 34, 5, 0, TAU); c.fill();  }
+    if (look === 'hermit') { c.fillStyle = d.col2;   c.beginPath(); c.arc(bw, -bh * 0.5, 5, 0, TAU); c.fill();  }
     if (n.id === 'cask' && LF.npcStage('cask', G.save) === 2) { c.restore(); return; }
     c.restore();
   };
@@ -544,11 +575,11 @@ var LF = globalThis.LF || (globalThis.LF = {});
     c.strokeStyle = '#0a080c'; c.lineWidth = 2;
     switch (it.t) {
       case 'mask': c.fillStyle = '#f4f0e8'; c.beginPath(); c.moveTo(-10, -8); c.quadraticCurveTo(0, -16, 10, -8); c.lineTo(4, 10); c.lineTo(-8, 6); c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#0a080c'; c.beginPath(); c.ellipse(-3, -3, 2, 3, 0, 0, TAU); c.fill(); break;
-      case 'vessel': c.fillStyle = '#ffe9b0'; c.shadowColor = '#ffb347'; c.shadowBlur = 14; c.beginPath(); c.arc(0, 0, 9, 0.3, Math.PI * 1.6); c.lineTo(2, -2); c.closePath(); c.fill(); c.shadowBlur = 0; c.stroke(); break;
+      case 'vessel': c.fillStyle = '#ffe9b0';   c.beginPath(); c.arc(0, 0, 9, 0.3, Math.PI * 1.6); c.lineTo(2, -2); c.closePath(); c.fill();  c.stroke(); break;
       case 'notch': c.strokeStyle = '#ffe28c'; c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 9, 0, TAU); c.stroke(); c.fillStyle = '#ffe28c'; c.fillRect(-2, -14, 4, 6); break;
-      case 'ore': c.fillStyle = '#e8eef4'; c.shadowColor = '#cfe0ff'; c.shadowBlur = 16; c.beginPath(); c.moveTo(-10, 6); c.lineTo(-6, -8); c.lineTo(4, -11); c.lineTo(11, 0); c.lineTo(5, 9); c.closePath(); c.fill(); c.shadowBlur = 0; c.stroke(); break;
+      case 'ore': c.fillStyle = '#e8eef4';   c.beginPath(); c.moveTo(-10, 6); c.lineTo(-6, -8); c.lineTo(4, -11); c.lineTo(11, 0); c.lineTo(5, 9); c.closePath(); c.fill();  c.stroke(); break;
       case 'charm': c.fillStyle = '#d8b060'; c.beginPath(); c.arc(0, 0, 11, 0, TAU); c.fill(); c.stroke(); c.fillStyle = '#ffe9b0'; c.beginPath(); c.moveTo(0, -7); c.lineTo(6, 0); c.lineTo(0, 7); c.lineTo(-6, 0); c.closePath(); c.fill(); break;
-      case 'wisp': c.fillStyle = '#fff3c4'; c.shadowColor = '#ffd27a'; c.shadowBlur = 16; c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(9, 0, 0, 8); c.quadraticCurveTo(-9, 0, 0, -13); c.fill(); c.shadowBlur = 0; c.fillStyle = '#5a4a2a'; c.fillRect(-4, -2, 2, 3); c.fillRect(2, -2, 2, 3); break;
+      case 'wisp': c.fillStyle = '#fff3c4';   c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(9, 0, 0, 8); c.quadraticCurveTo(-9, 0, 0, -13); c.fill();  c.fillStyle = '#5a4a2a'; c.fillRect(-4, -2, 2, 3); c.fillRect(2, -2, 2, 3); break;
       case 'glim': c.fillStyle = '#fff6c8'; for (let i = 0; i < 5; i++) { c.save(); c.rotate(i * 1.3); c.beginPath(); c.moveTo(0, -9 - i); c.lineTo(4, -3); c.lineTo(0, 0); c.lineTo(-4, -3); c.closePath(); c.fill(); c.restore(); } break;
       case 'ability': { const gg = c.createRadialGradient(0, 0, 2, 0, 0, 22); gg.addColorStop(0, '#fff'); gg.addColorStop(0.5, '#ffd27a'); gg.addColorStop(1, 'rgba(255,180,80,0)'); c.fillStyle = gg; c.beginPath(); c.arc(0, 0, 22 + Math.sin(t * 5) * 3, 0, TAU); c.fill(); break; }
     }
@@ -616,14 +647,16 @@ var LF = globalThis.LF || (globalThis.LF = {});
   // ================================================================= lighting & atmosphere
   let lightCv = null, lc = null;
   RN.lighting = function (c, G, cam) {
-    if (!lightCv) { lightCv = mk(VW, VH); lc = lightCv.getContext('2d'); }
+    const Q = 0.25;
+    if (!lightCv) { lightCv = mk(VW * Q, VH * Q); lc = lightCv.getContext('2d'); }
     const reg = LF.REGIONS[G.room.def.region];
     let dark = (G.room.def.f.dark !== undefined ? G.room.def.f.dark : reg.dark) + (G.darkBoost || 0);
     dark = LF.clamp(dark, 0, 0.92);
-    lc.globalCompositeOperation = 'source-over'; lc.clearRect(0, 0, VW, VH);
-    lc.fillStyle = `rgba(4,3,8,${dark})`; lc.fillRect(0, 0, VW, VH);
+    lc.globalCompositeOperation = 'source-over'; lc.globalAlpha = 1; lc.clearRect(0, 0, VW * Q, VH * Q);
+    lc.fillStyle = `rgba(4,3,8,${dark})`; lc.fillRect(0, 0, VW * Q, VH * Q);
     lc.globalCompositeOperation = 'destination-out';
-    const L = (x, y, r, a = 1) => { const sx = x - cam.x, sy = y - cam.y; if (sx < -r || sy < -r || sx > VW + r || sy > VH + r) return; const g = lc.createRadialGradient(sx, sy, 0, sx, sy, r); g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(1, 'rgba(0,0,0,0)'); lc.fillStyle = g; lc.fillRect(sx - r, sy - r, r * 2, r * 2); };
+    const black = RN.spr('#000000');
+    const L = (x, y, r, a = 1) => { const sx = x - cam.x, sy = y - cam.y; if (sx < -r || sy < -r || sx > VW + r || sy > VH + r) return; lc.globalAlpha = a; lc.drawImage(black, (sx - r) * Q, (sy - r) * Q, r * 2 * Q, r * 2 * Q); };
     const p = G.player;
     L(p.cx, p.y + 6, 230 + Math.sin(G.time * 9) * 4, 0.95);
     for (const l of G.room.rd.lights) L(l.x, l.y, l.r, 0.85);
@@ -633,28 +666,28 @@ var LF = globalThis.LF || (globalThis.LF = {});
     for (const l of G.room.dynLights) L(l.x, l.y, l.r, 0.8);
     if (G.boss && G.boss.active) L(G.boss.cx, G.boss.cy, 260, 0.6);
     for (const n of G.room.rd.npcs) L(n.x, n.y - 30, 110, 0.5);
-    c.drawImage(lightCv, 0, 0);
+    lc.globalAlpha = 1; lc.globalCompositeOperation = 'source-over';
+    if (!RN.vq) { RN.vq = mk(VW * Q, VH * Q); const v = RN.vq.getContext('2d'), g = v.createRadialGradient(VW * Q / 2, VH * Q / 2, VH * Q * 0.45, VW * Q / 2, VH * Q / 2, VH * Q * 0.95); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.55)'); v.fillStyle = g; v.fillRect(0, 0, VW * Q, VH * Q); }
+    lc.drawImage(RN.vq, 0, 0);
+    c.imageSmoothingEnabled = true; c.drawImage(lightCv, 0, 0, VW, VH);
     // additive glows
     c.save(); c.globalCompositeOperation = 'lighter';
-    const glow = (x, y, r, col, a) => { const sx = x - cam.x, sy = y - cam.y; if (sx < -r || sy < -r || sx > VW + r || sy > VH + r) return; const g = c.createRadialGradient(sx, sy, 0, sx, sy, r); g.addColorStop(0, hexA(col, a)); g.addColorStop(1, hexA(col, 0)); c.fillStyle = g; c.fillRect(sx - r, sy - r, r * 2, r * 2); };
+    const glow = (x, y, r, col, a) => { const sx = x - cam.x, sy = y - cam.y; if (sx < -r || sy < -r || sx > VW + r || sy > VH + r) return; c.globalAlpha = a; c.drawImage(RN.spr(col), sx - r, sy - r, r * 2, r * 2); };
     glow(p.cx, p.y + 2, 60, '#ffb347', 0.22);
     for (const l of G.room.rd.lights) glow(l.x, l.y, l.r * 0.5, l.c.startsWith('#') ? l.c : '#ffcf8a', 0.16);
     for (const l of G.room.dynLights) glow(l.x, l.y, l.r * 0.5, l.c || '#ff8c4c', 0.2);
-    c.restore();
+    c.globalAlpha = 1; c.restore();
   };
+  let vign = null;
   RN.fog = function (c, G, cam) {
     const reg = LF.REGIONS[G.room.def.region], t = G.time;
-    c.save();
-    for (let i = 0; i < 4; i++) {
-      const fx = ((i * 380 - cam.x * 0.7 + t * (12 + i * 5)) % (VW + 600) + VW + 600) % (VW + 600) - 300;
-      const fy = VH * (0.35 + i * 0.17) - cam.y * 0.1 % 100;
-      const g = c.createRadialGradient(fx, fy, 0, fx, fy, 320);
-      g.addColorStop(0, `rgba(${reg.fog},0.07)`); g.addColorStop(1, `rgba(${reg.fog},0)`);
-      c.fillStyle = g; c.fillRect(fx - 320, fy - 320, 640, 640);
+    if (!sprCache.has('fogc:' + reg.fog)) { const cv = mk(128, 128), x = cv.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, `rgba(${reg.fog},0.07)`); g.addColorStop(1, `rgba(${reg.fog},0)`); x.fillStyle = g; x.fillRect(0, 0, 128, 128); sprCache.set('fogc:' + reg.fog, cv); }
+    const fc = sprCache.get('fogc:' + reg.fog);
+    for (let i = 0; i < 2; i++) {
+      const fx = ((i * 560 - cam.x * 0.7 + t * (12 + i * 5)) % (VW + 600) + VW + 600) % (VW + 600) - 300;
+      const fy = VH * (0.45 + i * 0.3) - cam.y * 0.1 % 100;
+      c.drawImage(fc, fx - 320, fy - 320, 640, 640);
     }
-    const v = c.createRadialGradient(VW / 2, VH / 2, VH * 0.45, VW / 2, VH / 2, VH * 0.95);
-    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
-    c.fillStyle = v; c.fillRect(0, 0, VW, VH);
-    c.restore();
+
   };
 })();

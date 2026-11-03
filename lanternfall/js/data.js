@@ -122,7 +122,7 @@ LF.ENEMIES = {
 
 // ------------------------------------------------------------------ BOSSES
 LF.BOSSES = {
-  warden: { name: 'The Hollow Warden', title: 'Keeper of the Fallen Gate', hp: 190, reward: 'dash', region: 'umbravale' },
+  warden: { name: 'The Hollow Warden', title: 'Keeper of the Fallen Gate', hp: 165, reward: 'dash', region: 'umbravale' },
   bramble: { name: 'Mother Bramble', title: 'Heart of the Thicket', hp: 250, reward: 'claws', region: 'mossdeep' },
   archivist: { name: 'The Stone Archivist', title: 'Last Keeper of Aurel', hp: 260, reward: 'bolt', region: 'aurel' },
   wyrm: { name: 'Glasswyrm', title: 'Serpent of Prisms', hp: 330, reward: 'charge', region: 'glasswyrm' },

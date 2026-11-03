@@ -66,7 +66,7 @@ LF.R = LF.rng(Date.now() & 0xffffffff); // runtime (non-deterministic) rng for f
     keyName(a) {
       if (this.lastDevice === 'pad') return ({ jump: 'A', attack: 'X', dash: 'RT', spell: 'B', heal: 'Y', interact: '↑', inv: 'Select', map: 'LB', pause: 'Start' })[a] || a;
       const k = (this.map[a] || [''])[0];
-      return k.replace('Key', '').replace('Arrow', '').replace('Left', '').replace('Escape', 'Esc').replace('Space', 'Space');
+      return k.replace('Key', '').replace('ShiftLeft', 'Shift').replace('Arrow', '').replace('Escape', 'Esc');
     },
     endFrame() { this.pressed.clear(); this.released.clear(); this.pad.prev = new Set(this.pad.down); },
     pollPad() {

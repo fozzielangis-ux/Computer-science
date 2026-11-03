@@ -139,8 +139,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
     const extra = Math.floor(S.vfrags / 3);
     for (let i = 0; i < extra; i++) { const ex = ox + 46 + i * 26, ey = oy + 30, ek = LF.clamp((S.energy - me - i * 33) / 33, 0, 1); c.fillStyle = 'rgba(10,8,14,0.75)'; c.beginPath(); c.arc(ex, ey, 10, 0, TAU); c.fill(); c.fillStyle = '#f0c070'; c.beginPath(); c.arc(ex, ey, 9 * ek, 0, TAU); c.fill(); c.strokeStyle = GOLD; c.lineWidth = 1.5; c.beginPath(); c.arc(ex, ey, 10, 0, TAU); c.stroke(); }
     // masks
-    const mh = g.maxHp();
-    for (let i = 0; i < mh; i++) maskIcon(c, ox + 56 + i * 28, oy - 18, 1, i < S.hp, false);
+    const mh = g.maxHp(), msp = mh > 14 ? 360 / mh : 28;
+    for (let i = 0; i < mh; i++) maskIcon(c, ox + 56 + i * msp, oy - 18, msp < 28 ? msp / 28 : 1, i < S.hp, false);
     // glimmer
     const gx = ox + 54, gy = oy + 8 + (extra ? 0 : 0);
     c.save(); c.translate(gx, gy + 2); c.fillStyle = '#fff0a0'; c.beginPath(); c.moveTo(0, -8); c.lineTo(6, 0); c.lineTo(0, 8); c.lineTo(-6, 0); c.closePath(); c.fill(); c.restore();
@@ -248,8 +248,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       }
     },
     draw(c, s) {
-      SCREENS.title.draw(c, { sel: -1 });
-      c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(0, 0, VW, VH);
+      const bg = c.createLinearGradient(0, 0, 0, VH); bg.addColorStop(0, '#1a1424'); bg.addColorStop(1, '#05040a'); c.fillStyle = bg; c.fillRect(0, 0, VW, VH);
       text(c, 'Choose a Journey', VW / 2, 70, 32, '#fff6dc'); flourish(c, VW / 2, 88, 300);
       for (let i = 0; i < 3; i++) {
         const sv = LF.loadSlot(i + 1), y = 120 + i * 140, on = s.sel === i;
@@ -340,7 +339,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(0, 0, VW, VH);
       panel(c, VW / 2 - 330, 40, 660, 496, 0.96);
       text(c, 'Controls', VW / 2, 88, 30, '#fff6dc'); flourish(c, VW / 2, 104, 240);
-      const k = (a) => (LF.input.map[a] || []).map(x => x.replace('Key', '').replace('Arrow', '').replace('Left', '').replace('Escape', 'Esc')).join(' / ');
+      const k = (a) => (LF.input.map[a] || []).map(x => x.replace('Key', '').replace('ShiftLeft', 'Shift').replace('Arrow', '').replace('Escape', 'Esc')).join(' / ');
       const rows = [['Move', k('left') + ' · ' + k('right')], ['Look up / down', k('up') + ' · ' + k('down')], ['Jump (hold for height)', k('jump')], ['Attack', k('attack')], ['Dash', k('dash')], ['Spell (Ember Bolt)', k('spell')], ['Focus / heal (hold)', k('heal')], ['Interact / talk / rest', k('interact')], ['Stonefall slam', k('down') + ' + ' + k('dash') + ' in mid-air'], ['Lumen Cleave', 'hold ' + k('attack') + ', then release'], ['Drop through a ledge', k('down') + ' + ' + k('jump')], ['Inventory · Map', k('inv') + ' · ' + k('map')], ['Pause', k('pause')]];
       rows.forEach((r, i) => { text(c, r[0], VW / 2 - 280, 144 + i * 28, 17, INK, 'left'); text(c, r[1], VW / 2 + 280, 144 + i * 28, 16, '#ffcf7a', 'right'); });
       text(c, 'Gamepad: stick/d-pad move · A jump · X attack · RT/RB dash · B spell · Y heal · LB map · Select inventory', VW / 2, 520, 12, DIM);

@@ -75,7 +75,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     const isRes = (x0, y0, x1, y1, m = 0) => reserved.some(q => x0 - m <= q.x1 && x1 + m >= q.x0 && y0 - m <= q.y1 && y1 + m >= q.y0);
     const lockG = new Int16Array(W).fill(-1);
     const lock = (x0, x1, v = G0) => { for (let x = Math.max(2, x0); x <= Math.min(W - 3, x1); x++) lockG[x] = v; };
-    const out = { id: r.id, W, H, G0, items: [], spawns: [], npcs: [], lore: [], signs: [], props: [], lights: [], bench: null, doorRects: [], hazards: [] };
+    const out = { id: r.id, W, H, G0, items: [], spawns: [], npcs: [], lore: [], signs: [], props: [], lights: [], bench: null, doorRects: [], hazards: [], covers: [] };
     const doors = r.doors;
     const leftFloorDoor = doors.some(d => d.side === 'L' && d.row === G0), rightFloorDoor = doors.some(d => d.side === 'R' && d.row === G0);
     const upperDoorRows = { L: doors.filter(d => d.side === 'L' && d.row !== G0).map(d => d.row), R: doors.filter(d => d.side === 'R' && d.row !== G0).map(d => d.row) };
@@ -103,7 +103,13 @@ var LF = globalThis.LF || (globalThis.LF = {});
         const okL = !leftFloorDoor && !upperDoorRows.L.some(rw => rw > G0 - 9), okR = !rightFloorDoor && !upperDoorRows.R.some(rw => rw > G0 - 9);
         it.side = alcoveSide = okL && (!okR || rg() < 0.5) && alcoveSide !== 'L' ? 'L' : okR && alcoveSide !== 'R' ? 'R' : null;
         if (it.side === 'L') lock(2, 9); else if (it.side === 'R') lock(W - 10, W - 3);
-        else { it.tx = fx(0.5 + (rg() - 0.5) * 0.3); lock(it.tx - 6, it.tx + 7); }
+        else {
+          const taken = [...(f.npcs || []).map(n => fx(n.x)), ...(f.signs || []).map(n => fx(n.x)), ...loreList.map(n => fx(n.x)), ...(f.bench !== undefined ? [fx(f.bench)] : []),
+            ...itemDefs.filter(o => o !== it && o.x !== undefined).map(o => fx(o.x)), ...doors.filter(d => d.side === 'B' || d.side === 'T').map(d => d.col + 2)];
+          let best = fx(0.5), bd = -1;
+          for (let k = 0; k < 24; k++) { const cand = fx(0.15 + rg() * 0.7); const dmin = Math.min(99, ...taken.map(x => Math.abs(x - cand))); if (dmin > bd) { bd = dmin; best = cand; } }
+          it.tx = best; lock(it.tx - 6, it.tx + 7);
+        }
       }
     }
 
@@ -154,9 +160,9 @@ var LF = globalThis.LF || (globalThis.LF = {});
         if (d.gate === 'claws' || d.gate === 'climb') {
           fill(c - 1, 2, c - 1, G0 - 4, S); fill(c + 4, 2, c + 4, G0 - 4, S);
         } else if (d.gate === 'thorn') {
-          let last = G0; while (last > 4) { const pp = Math.max(3, last - 6); platform(c - 1, c + 4, pp); last = pp; }
+          let last = G0; while (last > 5) { const pp = Math.max(4, last - 6); platform(c - 1, c + 4, pp); last = pp; }
         } else {
-          let last = G0; while (last > 4) { const pp = Math.max(3, last - 3); platform(c - 1, c + 4, pp); last = pp; }
+          let last = G0; while (last > 5) { const pp = Math.max(4, last - 3); platform(c - 1, c + 4, pp); last = pp; }
         }
         reserve(c - 4, 0, c + 7, G0);
       } else if (d.side === 'B') {
@@ -176,8 +182,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
       if (d.side === 'L' || d.side === 'R') {
         const L = d.side === 'L', X = (i) => L ? i : W - 1 - i;
         if (g === 'gap') {
-          for (let i = 6; i <= 12; i++) { const x = X(i); fill(x, G0, x, H - 2, E); set(x, H - 2, SPK); ground[x] = H - 1; }
-          gateRes(Math.min(X(2), X(17)), 2, Math.max(X(2), X(17)), H - 1);
+          for (let i = 4; i <= 10; i++) { const x = X(i); fill(x, G0, x, H - 2, E); set(x, H - 2, SPK); ground[x] = H - 1; }
+          gateRes(Math.min(X(2), X(13)), 2, Math.max(X(2), X(13)), H - 1);
           out.hazards.push('gap');
         } else if (g === 'water') {
           for (let i = 5; i <= 12; i++) { const x = X(i); fill(x, G0, x, H - 2, GLOOM); }
@@ -240,11 +246,13 @@ var LF = globalThis.LF || (globalThis.LF = {});
           fill(a0, G0 - 5, a1, G0 - 1, S);
           const c0 = Math.min(X(1), X(3)), c1 = Math.max(X(1), X(3));
           fill(c0, G0 - 3, c1, G0 - 1, E); fill(X(4), G0 - 3, X(4), G0 - 1, BR);
+          out.covers.push({ x0: c0, y0: G0 - 3, x1: c1, y1: G0 - 1, kx: X(4), ky: G0 - 2 });
           pushItem(it, X(2) * 32 + 16, G0 * 32 - 18); reserve(Math.min(X(0), X(9)), G0 - 7, Math.max(X(0), X(9)), G0);
         } else {
           const x = it.tx; // freestanding pillar with hidden chamber
           fill(x - 2, G0 - 5, x + 3, G0 - 1, S); fill(x - 1, G0 - 3, x + 2, G0 - 1, E);
           fill(x - 2, G0 - 3, x - 2, G0 - 1, BR); fill(x + 3, G0 - 3, x + 3, G0 - 1, BR);
+          out.covers.push({ x0: x - 1, y0: G0 - 3, x1: x + 2, y1: G0 - 1, kx: x - 2, ky: G0 - 2, kx2: x + 3 });
           pushItem(it, x * 32 + 32, G0 * 32 - 18); reserve(x - 5, G0 - 8, x + 6, G0);
         }
       }

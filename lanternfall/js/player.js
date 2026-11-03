@@ -164,7 +164,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
         if (!this.atkT || this.atkDir !== 'side') this.face = dir;
       } else this.vx = LF.approach(this.vx, 0, (this.onGround ? K.DEC_G : K.ACC_A * 0.9) * dt);
 
-      // walls
+      // walls (with the claws, holding up against a wall starts a climb from the ground)
+      if (G.has('claws') && this.onGround && U && dir !== 0 && this.wallAt(G, dir) > 0 && !this.inWater) { this.onGround = false; this.vy = -K.CLIMB; this.y -= 2; this.wallGrace = 0.12; this.lastWall = dir; }
       this.wall = 0;
       if (G.has('claws') && !this.onGround && !this.inWater) {
         for (const s of [-1, 1]) {
@@ -275,7 +276,11 @@ var LF = globalThis.LF || (globalThis.LF = {});
 
     physics(G, dt, dir) {
       const hx = this.moveX(G, this.vx * dt);
-      if (hx) { if (this.recoilT <= 0) this.vx = 0; }
+      if (hx) {
+        if (this.recoilT <= 0) this.vx = 0;
+        // swimming: pushing against a low lip at the surface hops you out
+        if (this.inWater && dir === hx) { const tx = Math.floor((hx > 0 ? this.x + this.w + 2 : this.x - 2) / T), ty = Math.floor((this.y - 2) / T); if (G.room.tile(tx, ty) === TL.E && G.room.tile(tx, ty - 1) === TL.E) this.vy = Math.min(this.vy, -560); }
+      }
       // drop through one-way
       if (this.onGround && G.input.held('down') && G.input.hit('jump') && this.standingOnPlatform(G)) { this.dropT = 0.2; this.jumpBuf = 0; this.vy = 60; }
       const vyBefore = this.vy;

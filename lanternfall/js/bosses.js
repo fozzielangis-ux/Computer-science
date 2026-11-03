@@ -130,7 +130,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     c.fillStyle = '#2b3042'; c.beginPath(); c.ellipse(14, -44, 18, 16, 0, 0, TAU); c.fill(); c.stroke();
     c.fillStyle = '#c9d2ea'; c.beginPath(); c.moveTo(4, -56); c.quadraticCurveTo(-10, -86, 6, -96); c.quadraticCurveTo(0, -76, 14, -58); c.fill();
     const eye = this.phase > 1 ? '#ff7a5a' : '#ffd27a';
-    c.fillStyle = eye; c.shadowColor = eye; c.shadowBlur = 12; c.beginPath(); c.ellipse(22, -44, 4, 3, 0, 0, TAU); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = eye;   c.beginPath(); c.ellipse(22, -44, 4, 3, 0, 0, TAU); c.fill(); 
     // halberd
     c.save();
     const ang = p === 'raise' ? -2.2 : p === 'smash' ? 0.6 : p === 'swing0' ? 0.3 : p === 'swing1' ? -0.9 : p === 'charge' ? 1.3 : -0.4 + Math.sin(t * 2) * 0.05;
@@ -216,7 +216,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       c.beginPath(); c.ellipse(0, -18 - o * 18, 20, 34 + o * 8, 0, 0, TAU); c.fill(); c.restore();
     }
     const core = this.phase >= 3 ? '#ffd0f0' : '#e6c8ff';
-    c.fillStyle = core; c.shadowColor = core; c.shadowBlur = 20 + o * 20; c.beginPath(); c.arc(0, 0, 14 + o * 10 + Math.sin(t * 5) * 2, 0, TAU); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = core;   c.beginPath(); c.arc(0, 0, 14 + o * 10 + Math.sin(t * 5) * 2, 0, TAU); c.fill(); 
     c.restore();
     // erupting thorns & whip
     if (this.spikes) for (const k in this.spikes) { const s = this.spikes[k]; c.fillStyle = '#d6b25a'; c.strokeStyle = '#3a2a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(s.x - 20, this.FY); c.lineTo(s.x - 4, this.FY - 130 * s.k); c.lineTo(s.x + 6, this.FY - 90 * s.k); c.lineTo(s.x + 20, this.FY); c.fill(); c.stroke(); }
@@ -289,7 +289,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       // head: hooded with single eye
       c.fillStyle = '#5a4c3a'; c.beginPath(); c.arc(0, -32, 22, 0, TAU); c.fill(); c.stroke();
       c.fillStyle = '#16110c'; c.beginPath(); c.ellipse(0, -28, 14, 12, 0, 0, TAU); c.fill();
-      c.fillStyle = '#74e4d4'; c.shadowColor = '#74e4d4'; c.shadowBlur = 14; c.beginPath(); c.arc(0, -28, 4 + Math.sin(t * 4), 0, TAU); c.fill(); c.shadowBlur = 0;
+      c.fillStyle = '#74e4d4';   c.beginPath(); c.arc(0, -28, 4 + Math.sin(t * 4), 0, TAU); c.fill(); 
       // floating books
       for (let i = 0; i < 3; i++) { const a = t * 1.2 + i * TAU / 3, bx = Math.cos(a) * 46, by = Math.sin(a) * 16 - 4; c.fillStyle = ['#7a3a2a', '#2a4a6a', '#5a5a2a'][i]; c.fillRect(bx - 9, by - 6, 18, 12); c.fillStyle = '#f4ead0'; c.fillRect(bx - 7, by - 4, 14, 2); }
       c.restore();
@@ -369,7 +369,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     c.fillStyle = '#6d5fc0'; c.strokeStyle = '#1a1430'; c.lineWidth = 3;
     c.beginPath(); c.moveTo(44, 0); c.lineTo(10, -30); c.lineTo(-24, -24); c.lineTo(-30, 0); c.lineTo(-24, 24); c.lineTo(10, 30); c.closePath(); c.fill(); c.stroke();
     c.fillStyle = '#b9a2ff'; c.beginPath(); c.moveTo(-10, -24); c.lineTo(-30, -52); c.lineTo(0, -28); c.fill(); c.beginPath(); c.moveTo(-10, 24); c.lineTo(-30, 52); c.lineTo(0, 28); c.fill();
-    const eyc = this.phase > 1 ? '#ff9ef0' : '#83f2ff'; c.fillStyle = eyc; c.shadowColor = eyc; c.shadowBlur = 16; c.beginPath(); c.arc(16, -10, 5, 0, TAU); c.arc(16, 10, 5, 0, TAU); c.fill(); c.shadowBlur = 0;
+    const eyc = this.phase > 1 ? '#ff9ef0' : '#83f2ff'; c.fillStyle = eyc;   c.beginPath(); c.arc(16, -10, 5, 0, TAU); c.arc(16, 10, 5, 0, TAU); c.fill(); 
     c.restore();
     if (this.beamCharge > 0) {
       const bx = this.cx, by = this.y + 10, a = this.beamA;
@@ -444,8 +444,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
     if (this.phase > 1) { c.strokeStyle = '#1a1208'; c.lineWidth = 2; c.beginPath(); c.moveTo(10, -80); c.lineTo(0, -50); c.lineTo(14, -30); c.lineTo(4, 0); c.stroke(); }
     // face plate & eyes
     c.fillStyle = '#2a1e0c'; c.beginPath(); c.ellipse(f * 6, -40, 22, 14, 0, 0, TAU); c.fill();
-    const ec = this.phase > 1 ? '#ff8c4c' : '#ffd27a'; c.fillStyle = ec; c.shadowColor = ec; c.shadowBlur = 12;
-    c.beginPath(); c.arc(f * 6 - 8, -40, 4, 0, TAU); c.arc(f * 6 + 8, -40, 4, 0, TAU); c.fill(); c.shadowBlur = 0;
+    const ec = this.phase > 1 ? '#ff8c4c' : '#ffd27a'; c.fillStyle = ec;  
+    c.beginPath(); c.arc(f * 6 - 8, -40, 4, 0, TAU); c.arc(f * 6 + 8, -40, 4, 0, TAU); c.fill(); 
     // top handle + gears
     c.strokeStyle = '#8a7040'; c.lineWidth = 6; c.beginPath(); c.arc(0, -92, 12, Math.PI, 0); c.stroke();
     c.save(); c.translate(-38, -60); c.rotate(t * 2); c.strokeStyle = '#8a7040'; c.lineWidth = 3; for (let i = 0; i < 8; i++) { c.rotate(TAU / 8); c.beginPath(); c.moveTo(6, 0); c.lineTo(12, 0); c.stroke(); } c.beginPath(); c.arc(0, 0, 7, 0, TAU); c.stroke(); c.restore();
@@ -521,7 +521,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     c.fillStyle = '#e8ffff'; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(18 + i * 7, -6); c.lineTo(21 + i * 7, 2); c.lineTo(24 + i * 7, -6); c.fill(); }
     // frills
     c.fillStyle = 'rgba(165,255,255,0.4)'; for (const s of [-1, 1]) { c.beginPath(); c.moveTo(-10, s * 28); c.quadraticCurveTo(-30, s * 60, -46, s * 30); c.fill(); }
-    const ec = this.phase > 1 ? '#ff7aa0' : '#a5ffff'; c.fillStyle = ec; c.shadowColor = ec; c.shadowBlur = 14; c.beginPath(); c.arc(12, -14, 5, 0, TAU); c.fill(); c.shadowBlur = 0;
+    const ec = this.phase > 1 ? '#ff7aa0' : '#a5ffff'; c.fillStyle = ec;   c.beginPath(); c.arc(12, -14, 5, 0, TAU); c.fill(); 
     c.restore();
     if (this.geys) for (const k in this.geys) { const s = this.geys[k]; const h = 150 * s.k; const g = c.createLinearGradient(0, this.FY - h, 0, this.FY); g.addColorStop(0, 'rgba(230,255,255,0.9)'); g.addColorStop(1, 'rgba(60,160,170,0.6)'); c.fillStyle = g; c.beginPath(); c.moveTo(s.x - 24, this.FY); c.quadraticCurveTo(s.x - 30, this.FY - h * 0.6, s.x, this.FY - h); c.quadraticCurveTo(s.x + 30, this.FY - h * 0.6, s.x + 24, this.FY); c.fill(); }
   };
@@ -589,11 +589,11 @@ var LF = globalThis.LF || (globalThis.LF = {});
     c.fillStyle = g; c.beginPath(); c.moveTo(-48, 40); c.quadraticCurveTo(-64, -10, -40, -52); c.quadraticCurveTo(0, -70, 40, -52); c.quadraticCurveTo(64, -10, 48, 40); c.closePath(); c.fill();
     c.strokeStyle = '#140a08'; c.lineWidth = 4; c.stroke();
     // cracks glowing
-    c.strokeStyle = '#ffd36a'; c.lineWidth = 2; c.shadowColor = '#ff8c4c'; c.shadowBlur = 10;
-    c.beginPath(); c.moveTo(-20, -40); c.lineTo(-8, -10); c.lineTo(-24, 20); c.moveTo(18, -30); c.lineTo(8, 6); c.lineTo(22, 30); c.stroke(); c.shadowBlur = 0;
+    c.strokeStyle = '#ffd36a'; c.lineWidth = 2;  
+    c.beginPath(); c.moveTo(-20, -40); c.lineTo(-8, -10); c.lineTo(-24, 20); c.moveTo(18, -30); c.lineTo(8, 6); c.lineTo(22, 30); c.stroke(); 
     // head
     c.fillStyle = '#3a2420'; c.beginPath(); c.moveTo(-22, -52); c.lineTo(-18, -82); c.lineTo(18, -82); c.lineTo(22, -52); c.fill(); c.stroke();
-    c.fillStyle = '#ffd36a'; c.shadowColor = '#ff8c4c'; c.shadowBlur = 14; c.fillRect(-12, -72, 24, 6); c.shadowBlur = 0;
+    c.fillStyle = '#ffd36a';   c.fillRect(-12, -72, 24, 6); 
     // horns
     c.fillStyle = '#1a0e0a'; c.beginPath(); c.moveTo(-18, -78); c.quadraticCurveTo(-40, -90, -34, -110); c.quadraticCurveTo(-28, -92, -10, -82); c.fill(); c.beginPath(); c.moveTo(18, -78); c.quadraticCurveTo(40, -90, 34, -110); c.quadraticCurveTo(28, -92, 10, -82); c.fill();
     // hammer arm
@@ -682,7 +682,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     // halo
     c.strokeStyle = 'rgba(235,203,126,0.7)'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 60 + Math.sin(t * 2) * 3, 0, TAU); c.stroke();
     c.restore();
-    for (const o of this.orbs) if (o.alive) { c.fillStyle = '#ffa3f2'; c.shadowColor = '#ffa3f2'; c.shadowBlur = 12; c.beginPath(); c.arc(x + Math.cos(o.a) * 70, y + Math.sin(o.a) * 70, 8, 0, TAU); c.fill(); c.shadowBlur = 0; }
+    for (const o of this.orbs) if (o.alive) { c.fillStyle = '#ffa3f2';   c.beginPath(); c.arc(x + Math.cos(o.a) * 70, y + Math.sin(o.a) * 70, 8, 0, TAU); c.fill();  }
     if (this.ph) for (const ph of this.ph) { c.save(); c.globalAlpha = 0.7; c.fillStyle = '#1a1024'; c.beginPath(); c.ellipse(ph.x, ph.y, 14, 22, 0, 0, TAU); c.fill(); c.fillStyle = '#ffa3f2'; c.beginPath(); c.arc(ph.x, ph.y - 18, 9, 0, TAU); c.fill(); c.restore(); }
     if (this.beamCharge > 0) {
       c.save(); c.globalCompositeOperation = 'lighter'; const a2 = this.beamA;
@@ -753,7 +753,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       c.fillStyle = '#221d33'; c.beginPath(); c.ellipse(0, -22, 11, 18, 0, 0, TAU); c.fill();
       // head — dark lantern, violet unlit flame
       c.fillStyle = '#2d2542'; c.strokeStyle = '#0a0812'; c.lineWidth = 2; c.beginPath(); c.ellipse(0, -46, 12, 13, 0, 0, TAU); c.fill(); c.stroke();
-      c.fillStyle = '#c47dff'; c.shadowColor = '#c47dff'; c.shadowBlur = 14; c.beginPath(); c.moveTo(0, -64 - Math.sin(t * 9) * 3); c.quadraticCurveTo(7, -52, 0, -48); c.quadraticCurveTo(-7, -52, 0, -64 - Math.sin(t * 9) * 3); c.fill(); c.shadowBlur = 0;
+      c.fillStyle = '#c47dff';   c.beginPath(); c.moveTo(0, -64 - Math.sin(t * 9) * 3); c.quadraticCurveTo(7, -52, 0, -48); c.quadraticCurveTo(-7, -52, 0, -64 - Math.sin(t * 9) * 3); c.fill(); 
       c.fillStyle = '#fff'; c.fillRect(2, -47, 5, 3); c.fillRect(-6, -47, 4, 3);
       // blade
       c.save(); const ang = pose === 'slash' ? 1.3 : pose === 'plunge' ? 1.57 : pose === 'guard' ? -1.2 : pose === 'ready' ? -0.6 : 0.5;
@@ -834,7 +834,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     for (let i = 0; i < 5; i++) { c.strokeStyle = 'rgba(255,226,140,0.3)'; c.lineWidth = 2; c.beginPath(); c.ellipse(0, 10 + i * 16, 22, 5, 0, 0, Math.PI); c.stroke(); }
     // inner flame (flickers with phase)
     const fl = this.phase === 1 ? '#fff3c4' : this.phase === 2 ? '#ffb35a' : '#c47dff';
-    c.fillStyle = fl; c.shadowColor = fl; c.shadowBlur = 30; c.globalAlpha = 0.7 + Math.sin(t * 13) * 0.2; c.beginPath(); c.arc(0, 20, 12, 0, TAU); c.fill(); c.globalAlpha = 1; c.shadowBlur = 0;
+    c.fillStyle = fl;   c.globalAlpha = 0.7 + Math.sin(t * 13) * 0.2; c.beginPath(); c.arc(0, 20, 12, 0, TAU); c.fill(); c.globalAlpha = 1; 
     // head & crown
     c.fillStyle = '#2a2016'; c.beginPath(); c.arc(0, -46, 22, 0, TAU); c.fill();
     c.strokeStyle = '#d9c08a'; c.lineWidth = 3; for (const s of [-1, 1]) { c.beginPath(); c.moveTo(s * 8, -64); c.quadraticCurveTo(s * 30, -110, s * 56, -100 + Math.sin(t * 2) * 4); c.stroke(); }
