@@ -87,6 +87,12 @@ const path = require('path');
     S.abilities = []; flat('r1_hall'); const e = new LF.Enemy('husk', p.cx + 0, (G.room.G0) * 32); e.vx = 0; e.def = Object.assign({}, e.def, { spd: 0 }); G.enemies = [e];
     p.y -= 120; p.vy = 0; LF.test.run(8); LF.test.run(1, ['down'], ['attack']); let bounced = false; for (let i = 0; i < 20; i++) { LF.test.run(1, ['down']); if (p.vy < -400) bounced = true; }
     ok('down-strike pogo bounces off enemies', bounced);
+    // 12b. focus heals a mask and spends Lumen
+    S.abilities = []; flat('h_town'); S.masks = 5; S.hp = 2; S.energy = 99; LF.test.run(3);
+    LF.test.run(70, ['heal']);
+    ok('holding focus heals one mask for 33 Lumen', S.hp === 3 && S.energy === 66, `hp ${S.hp} energy ${S.energy}`);
+    S.equipped = ['deep_focus']; S.hp = 2; S.energy = 99; LF.test.run(100, ['heal']); S.equipped = [];
+    ok('Deep Focus heals two masks', S.hp === 4, 'hp ' + S.hp);
     // 13. death -> shade -> recovery
     S.abilities = []; S.bench = 'h_town'; S.glim = 321; flat('r1_hall'); S.hp = 1; G.hurtPlayer(1, p.cx - 10);
     ok('death triggers', p.dead); LF.test.run(200);

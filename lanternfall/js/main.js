@@ -109,6 +109,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
     for (let i = 0; i < big; i++) G.glims.push(new LF.Glim(x, y, 10));
     for (let i = 0; i < small; i++) G.glims.push(new LF.Glim(x, y, 1));
   };
+  G.heal = (n) => { G.S.hp = Math.min(G.maxHp(), G.S.hp + n); G.calcStats(); };
   G.addGlim = (v) => { G.S.glim = Math.min(99999, G.S.glim + v); G.glimPop = 1; };
   G.timer = (t, fn) => G.timers.push({ t, fn });
 
