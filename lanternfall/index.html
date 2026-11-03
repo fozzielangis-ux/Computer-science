@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lanternfall</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #050408; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; background: #000; image-rendering: auto; box-shadow: 0 0 80px rgba(0,0,0,0.8); }
+  #err { position: fixed; left: 8px; bottom: 8px; color: #f88; font: 12px monospace; white-space: pre-wrap; max-width: 90vw; }
+</style>
+</head>
+<body>
+<canvas id="game" width="1024" height="576" tabindex="0"></canvas>
+<div id="err"></div>
+<script>
+  window.addEventListener('error', e => { document.getElementById('err').textContent += (e.message || e) + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno + '\n'; });
+</script>
+<script src="js/core.js"></script>
+<script src="js/data.js"></script>
+<script src="js/world.js"></script>
+<script src="js/story.js"></script>
+<script src="js/player.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/bosses.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+<script>LF.boot(); document.getElementById('game').focus();</script>
+</body>
+</html>
