@@ -246,27 +246,41 @@ export class FinaleScene extends BaseScene {
   _nameBand(layer, r, h, y, cfg) {
     // a fondant ribbon around the bottom tier with her name piped on
     const name = cfg.name;
-    const tex = canvasTexture(2048, 160, (g, w, hh) => {
+    const bandH = 0.24;
+    const circumference = Math.PI * 2 * (r + 0.012);
+    // match the canvas proportions to the band so the lettering isn't stretched
+    const texH = 128;
+    const texW = Math.min(4096, Math.round((texH * circumference) / bandH));
+    const label = cfg.age > 0 ? `Happy ${ordinal(cfg.age)} Birthday ${name}` : `Happy Birthday ${name}`;
+    const tex = canvasTexture(texW, texH, (g, w, hh) => {
       g.fillStyle = '#ffffff';
       g.fillRect(0, 0, w, hh);
       g.fillStyle = '#ffc23d';
-      g.fillRect(0, 8, w, 7);
-      g.fillRect(0, hh - 15, w, 7);
+      g.fillRect(0, 6, w, 6);
+      g.fillRect(0, hh - 12, w, 6);
       g.fillStyle = '#ff4fa3';
-      g.font = '400 96px Pacifico, cursive';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      const label = cfg.age > 0 ? `Happy ${ordinal(cfg.age)} ${name}` : `Happy Birthday ${name}`;
-      g.fillText(label, w / 2, hh / 2 + 4);
-      // little hearts around the band
-      g.font = '40px sans-serif';
-      for (let x = 60; x < w; x += 170) {
-        if (Math.abs(x - w / 2) < 520) continue;
+      // keep the writing on the front of the cake (about a third of the way round)
+      const maxW = w * 0.3;
+      let size = 76;
+      g.font = `400 ${size}px Pacifico, cursive`;
+      const measured = g.measureText(label).width;
+      if (measured > maxW) {
+        size = Math.floor((size * maxW) / measured);
+        g.font = `400 ${size}px Pacifico, cursive`;
+      }
+      const textW = g.measureText(label).width;
+      g.fillText(label, w / 2, hh / 2 + 3);
+      // little hearts around the rest of the band
+      g.font = '30px sans-serif';
+      for (let x = 50; x < w; x += 120) {
+        if (Math.abs(x - w / 2) < textW / 2 + 70) continue;
         g.fillText('♥', x, hh / 2 + 2);
       }
     });
     const band = new THREE.Mesh(
-      new THREE.CylinderGeometry(r + 0.012, r + 0.012, 0.24, 96, 1, true, Math.PI, Math.PI * 2),
+      new THREE.CylinderGeometry(r + 0.012, r + 0.012, bandH, 96, 1, true, Math.PI, Math.PI * 2),
       new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.4, clearcoat: 0.3 })
     );
     band.position.y = h * 0.42;
