@@ -8,19 +8,19 @@ Everything is original: the world, story, characters, enemies and bosses. All of
 
 ## Controls
 
-| Action | Keyboard (default) | Keyboard (WASD layout) | Gamepad |
+| Action | Keyboard + mouse (default) | Keyboard only (arrows layout) | Gamepad |
 |---|---|---|---|
-| Move | ← → | A D | Stick / D-pad |
-| Look up / down | ↑ ↓ | W S | Stick |
-| Jump (hold for height) | Z or Space | Space or K | A |
-| Attack | X | J | X |
-| Dash | C or Shift | L or Shift | RT / RB |
-| Spell | A | U | B |
-| Focus (hold to heal) | S | H | Y |
-| Interact / talk / rest | ↑ or E | W or E | Up |
+| Move | A D | ← → | Stick / D-pad |
+| Look up / down | W S | ↑ ↓ | Stick |
+| Jump (hold for height) | Space | Z or Space | A |
+| Attack | Left Click (or J) | X | X |
+| Dash | Shift | C or Shift | RT / RB |
+| Spell | Q | A | B |
+| Focus (hold to heal) | F | S | Y |
+| Interact / talk / rest | W or E | ↑ or E | Up |
 | Inventory · Map · Pause | Tab · M · Esc | Tab · M · Esc | Select · LB · Start |
 
-You can switch keyboard layouts in **Settings**. Some moves are combinations:
+You can switch to the arrows layout in **Settings**. In the default layout every key sits under the left hand, so it works on a 60% keyboard. Some moves are combinations:
 
 - **Stonefall slam:** hold Down and press Dash in mid-air.
 - **Lumen Cleave:** hold Attack, then release.

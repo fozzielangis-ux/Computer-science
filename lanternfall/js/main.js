@@ -7,7 +7,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
 
   // ================================================================ settings
   const SET_KEY = 'lanternfall_settings';
-  LF.settings = Object.assign({ master: 0.8, music: 0.6, sfx: 0.8, shake: true, preset: 'arrows', timer: false, fps: false }, (() => { try { return JSON.parse(localStorage.getItem(SET_KEY)) || {}; } catch (e) { return {}; } })());
+  LF.settings = Object.assign({ master: 0.8, music: 0.6, sfx: 0.8, shake: true, preset: 'wasd', timer: false, fps: false }, (() => { try { return JSON.parse(localStorage.getItem(SET_KEY)) || {}; } catch (e) { return {}; } })());
+  if (!LF.settings.layoutV2) { LF.settings.layoutV2 = true; LF.settings.preset = 'wasd'; }
   LF.saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(LF.settings)); } catch (e) { } };
   LF.applySettings = () => { const s = LF.settings; LF.audio.setVol('master', s.master); LF.audio.setVol('music', s.music); LF.audio.setVol('sfx', s.sfx); LF.input.setPreset(s.preset); };
 

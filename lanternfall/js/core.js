@@ -44,19 +44,19 @@ LF.R = LF.rng(Date.now() & 0xffffffff); // runtime (non-deterministic) rng for f
   const PRESETS = {
     arrows: {
       left: ['ArrowLeft'], right: ['ArrowRight'], up: ['ArrowUp'], down: ['ArrowDown'],
-      jump: ['KeyZ', 'Space'], attack: ['KeyX'], dash: ['KeyC', 'ShiftLeft'], spell: ['KeyA'], heal: ['KeyS'],
+      jump: ['KeyZ', 'Space'], attack: ['KeyX', 'Mouse0'], dash: ['KeyC', 'ShiftLeft'], spell: ['KeyA'], heal: ['KeyS'],
       interact: ['ArrowUp', 'KeyE'], inv: ['Tab', 'KeyI'], map: ['KeyM'], pause: ['Escape', 'KeyP'], confirm: ['Enter', 'KeyZ', 'Space'], back: ['Escape', 'Backspace', 'KeyX'],
       tabL: ['KeyQ'], tabR: ['KeyW']
     },
     wasd: {
       left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'],
-      jump: ['Space', 'KeyK'], attack: ['KeyJ'], dash: ['KeyL', 'ShiftLeft'], spell: ['KeyU'], heal: ['KeyH'],
+      jump: ['Space', 'KeyK'], attack: ['Mouse0', 'KeyJ'], dash: ['ShiftLeft', 'KeyL'], spell: ['KeyQ', 'KeyU'], heal: ['KeyF', 'KeyH'],
       interact: ['KeyW', 'KeyE'], inv: ['Tab', 'KeyI'], map: ['KeyM'], pause: ['Escape', 'KeyP'], confirm: ['Enter', 'Space', 'KeyK'], back: ['Escape', 'Backspace', 'KeyJ'],
       tabL: ['KeyQ'], tabR: ['KeyR']
     }
   };
   const I = LF.input = {
-    preset: 'arrows', map: PRESETS.arrows, PRESETS,
+    preset: 'wasd', map: PRESETS.wasd, PRESETS,
     down: new Set(), pressed: new Set(), released: new Set(),
     pad: { down: new Set(), prev: new Set() }, lastDevice: 'kb', anyKey: false,
     setPreset(p) { this.preset = PRESETS[p] ? p : 'arrows'; this.map = PRESETS[this.preset]; },
@@ -66,6 +66,7 @@ LF.R = LF.rng(Date.now() & 0xffffffff); // runtime (non-deterministic) rng for f
     keyName(a) {
       if (this.lastDevice === 'pad') return ({ jump: 'A', attack: 'X', dash: 'RT', spell: 'B', heal: 'Y', interact: '↑', inv: 'Select', map: 'LB', pause: 'Start' })[a] || a;
       const k = (this.map[a] || [''])[0];
+      if (k === 'Mouse0') return 'Left Click';
       return k.replace('Key', '').replace('ShiftLeft', 'Shift').replace('Arrow', '').replace('Escape', 'Esc');
     },
     endFrame() { this.pressed.clear(); this.released.clear(); this.pad.prev = new Set(this.pad.down); },
@@ -90,6 +91,15 @@ LF.R = LF.rng(Date.now() & 0xffffffff); // runtime (non-deterministic) rng for f
     I.down.add(e.code); I.lastDevice = 'kb'; I.anyKey = true;
     LF.audio && LF.audio.unlock();
   });
+  // left mouse button acts as a key ("Mouse0"), so it can be bound like any other
+  window.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    if (!I.down.has('Mouse0')) I.pressed.add('Mouse0');
+    I.down.add('Mouse0'); I.lastDevice = 'kb'; I.anyKey = true;
+    LF.audio && LF.audio.unlock();
+  });
+  window.addEventListener('mouseup', e => { if (e.button === 0) { I.down.delete('Mouse0'); I.released.add('Mouse0'); } });
   window.addEventListener('keyup', e => { I.down.delete(e.code); I.released.add(e.code); });
   window.addEventListener('blur', () => { I.down.clear(); });
   window.addEventListener('pointerdown', () => { LF.audio && LF.audio.unlock(); });

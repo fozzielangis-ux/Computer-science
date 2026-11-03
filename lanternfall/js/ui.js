@@ -210,7 +210,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       flourish(c, VW / 2, 352, 460);
       text(c, 'A tale of Umbravale', VW / 2, 380, 20, DIM);
       menuList(c, this.items(), s.sel, VW / 2, 438, 34, 22);
-      text(c, 'Arrows / Z / X / Enter — or a gamepad', VW / 2, VH - 16, 13, 'rgba(244,234,216,0.35)');
+      text(c, 'A D move · Space jump · Left Click attack · Enter select — or a gamepad', VW / 2, VH - 16, 13, 'rgba(244,234,216,0.35)');
     }
   };
   SCREENS.about = {
@@ -300,7 +300,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       { k: 'music', label: 'Music Volume', v: Math.round(s.music * 10) },
       { k: 'sfx', label: 'Sound Effects', v: Math.round(s.sfx * 10) },
       { k: 'shake', label: 'Screen Shake', v: s.shake ? 'On' : 'Off' },
-      { k: 'preset', label: 'Keyboard Layout', v: s.preset === 'arrows' ? 'Arrows + Z X C A S' : 'WASD + Space J L U H' },
+      { k: 'preset', label: 'Keyboard Layout', v: s.preset === 'arrows' ? 'Arrows + Z X C A S' : 'WASD + Space · Click · Shift Q F' },
       { k: 'timer', label: 'Show Play Timer', v: s.timer ? 'On' : 'Off' },
       { k: 'fps', label: 'Show FPS', v: s.fps ? 'On' : 'Off' },
       { k: 'full', label: 'Fullscreen', v: document.fullscreenElement ? 'On' : 'Off' },
@@ -339,7 +339,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(0, 0, VW, VH);
       panel(c, VW / 2 - 330, 40, 660, 496, 0.96);
       text(c, 'Controls', VW / 2, 88, 30, '#fff6dc'); flourish(c, VW / 2, 104, 240);
-      const k = (a) => (LF.input.map[a] || []).map(x => x.replace('Key', '').replace('ShiftLeft', 'Shift').replace('Arrow', '').replace('Escape', 'Esc')).join(' / ');
+      const k = (a) => (LF.input.map[a] || []).map(x => x.replace('Mouse0', 'Left Click').replace('Key', '').replace('ShiftLeft', 'Shift').replace('Arrow', '').replace('Escape', 'Esc')).join(' / ');
       const rows = [['Move', k('left') + ' · ' + k('right')], ['Look up / down', k('up') + ' · ' + k('down')], ['Jump (hold for height)', k('jump')], ['Attack', k('attack')], ['Dash', k('dash')], ['Spell (Ember Bolt)', k('spell')], ['Focus / heal (hold)', k('heal')], ['Interact / talk / rest', k('interact')], ['Stonefall slam', k('down') + ' + ' + k('dash') + ' in mid-air'], ['Lumen Cleave', 'hold ' + k('attack') + ', then release'], ['Drop through a ledge', k('down') + ' + ' + k('jump')], ['Inventory · Map', k('inv') + ' · ' + k('map')], ['Pause', k('pause')]];
       rows.forEach((r, i) => { text(c, r[0], VW / 2 - 280, 144 + i * 28, 17, INK, 'left'); text(c, r[1], VW / 2 + 280, 144 + i * 28, 16, '#ffcf7a', 'right'); });
       text(c, 'Gamepad: stick/d-pad move · A jump · X attack · RT/RB dash · B spell · Y heal · LB map · Select inventory', VW / 2, 520, 12, DIM);
