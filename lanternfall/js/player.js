@@ -184,6 +184,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
         this.wallGrace -= dt;
       }
 
+      // drop through a ledge/grate: down + jump while standing on one
+      if (this.jumpBuf > 0 && this.onGround && D && this.standingOnPlatform(G)) { this.dropT = 0.22; this.jumpBuf = 0; this.vy = 80; this.onGround = false; this.coyote = 0; }
       // jump
       if (this.jumpBuf > 0) {
         if (this.inWater) {
@@ -281,8 +283,6 @@ var LF = globalThis.LF || (globalThis.LF = {});
         // swimming: pushing against a low lip at the surface hops you out
         if (this.inWater && dir === hx) { const tx = Math.floor((hx > 0 ? this.x + this.w + 2 : this.x - 2) / T), ty = Math.floor((this.y - 2) / T); if (G.room.tile(tx, ty) === TL.E && G.room.tile(tx, ty - 1) === TL.E) this.vy = Math.min(this.vy, -560); }
       }
-      // drop through one-way
-      if (this.onGround && G.input.held('down') && G.input.hit('jump') && this.standingOnPlatform(G)) { this.dropT = 0.2; this.jumpBuf = 0; this.vy = 60; }
       const vyBefore = this.vy;
       const hy = this.moveY(G, this.vy * dt);
       if (hy > 0) {

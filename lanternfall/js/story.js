@@ -160,6 +160,8 @@ var LF = globalThis.LF || (globalThis.LF = {});
   LF.SIGNS = {
     tut_move: 'Use [left] and [right] to move. Press [jump] to jump; hold it to jump higher. Press [interact] beside folk, benches and tablets.',
     tut_attack: 'Press [attack] to strike. Hold [up] to strike upward. In mid-air, hold [down] to strike downward; striking foes or spikes from above bounces you up.',
+    tut_drop: 'An iron grate over the old well. Old Umbravale lies below. Hold [down] and press [jump] to drop through.',
+    tut_drop2: 'The east well, down to the Gallery of Kings. Hold [down] and press [jump] to drop through the grate.',
     tut_heal: 'Striking foes fills your Lumen vessel. Stand still and hold [heal] to focus Lumen into a mask. Resting at a bench saves your journey.',
   };
 })();

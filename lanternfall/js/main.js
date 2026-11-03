@@ -659,8 +659,10 @@ var LF = globalThis.LF || (globalThis.LF = {});
   };
   G.tick = (dt) => {
     G.time += dt;
+    const wasBlocking = LF.UI.blocking();
     LF.UI.update(dt);
     if (G.state === 'play' && G.room && !LF.UI.blocking()) {
+      if (wasBlocking) { LF.input.pressed.clear(); LF.input.pad.prev = new Set(LF.input.pad.down); }
       if (G.hitstop > 0) G.hitstop -= dt;
       else G.update(dt * G.slowmo);
       if (G.shakeT > 0) G.shakeT -= dt; else G.shakeA = 0;

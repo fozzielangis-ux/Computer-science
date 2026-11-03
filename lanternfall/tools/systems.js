@@ -25,7 +25,7 @@ const OUT = process.env.SHOTS || path.join(__dirname, '..', 'shots');
         let tx, ty, hold = [], press = [], frames = 90;
         if (d.side === 'L') { tx = 3; ty = d.row; hold = ['left']; }
         else if (d.side === 'R') { tx = rd.W - 4; ty = d.row; hold = ['right']; }
-        else if (d.side === 'B') { tx = d.col + 1; ty = rd.G0 - 1; frames = 120; }
+        else if (d.side === 'B') { tx = d.col + 1; ty = rd.G0 - 1; frames = 120; if (r.f.grates) { ty = rd.G0; hold = ['down']; press = ['jump']; } }
         else { tx = d.col + 1; ty = 2; while (ty < rd.H && rd.tiles[ty * rd.W + tx] === 0) ty++; hold = ['jump']; frames = 50; }
         LF.test.place(r.id, tx, ty);
         // clear any gate tiles at the door for this mechanical check

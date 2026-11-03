@@ -168,6 +168,7 @@ var LF = globalThis.LF || (globalThis.LF = {});
       } else if (d.side === 'B') {
         const c = d.col;
         fill(c, G0, c + 3, H - 1, E);
+        if (f.grates) platform(c, c + 3, G0);
         catchers.push(d);
         out.doorRects.push({ d, x0: c, y0: H - 2, x1: c + 3, y1: H - 1 });
         reserve(c - 6, H - 10, c + 9, H - 1);

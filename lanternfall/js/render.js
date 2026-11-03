@@ -96,13 +96,15 @@ var LF = globalThis.LF || (globalThis.LF = {});
     // static special tiles
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = get(x, y), px = x * T, py = y * T;
-      if (v === TL.P) RN.ledge(c2, reg, px, py, get(x - 1, y) !== TL.P && get(x - 1, y) !== TL.CU, get(x + 1, y) !== TL.P && get(x + 1, y) !== TL.CU, rg);
+      if (v === TL.P && room.def.f.grates && y === room.rd.G0) { c2.fillStyle = '#2a2420'; c2.fillRect(px, py, T, 8); c2.fillStyle = '#6a5a48'; for (let i = 0; i < 4; i++) c2.fillRect(px + i * 8 + 2, py, 3, 8); c2.fillStyle = '#8a7a60'; c2.fillRect(px, py, T, 2); }
+      else if (v === TL.P) RN.ledge(c2, reg, px, py, get(x - 1, y) !== TL.P && get(x - 1, y) !== TL.CU, get(x + 1, y) !== TL.P && get(x + 1, y) !== TL.CU, rg);
       else if (v === TL.SPK) RN.spikes(c2, reg, px, py, rg);
       else if (v === TL.TH) RN.thorns(c2, reg, px, py, rg);
       else if (v === TL.CR) RN.crystalWall(c2, px, py, rg, get(x, y - 1) !== TL.CR);
       else if (v === TL.SE) RN.sealWall(c2, px, py, rg, get(x, y - 1) !== TL.SE, get(x, y + 1) !== TL.SE);
-      else if (v === TL.KY) RN.keyGate(c2, px, py, rg, x, y, get);
     }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (get(x, y) === TL.KY) RN.keyGate(c2, x * T, y * T, rg, x, y, get);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (get(x, y) === TL.KY) RN.keyEmblem(c2, x * T, y * T, x, y, get);
     if (!room.back) {
       const bv = mk(W * T, H * T), b = bv.getContext('2d');
       RN.backwall(b, room, reg, LF.rng('back:' + room.def.id), get, solid);
@@ -168,11 +170,21 @@ var LF = globalThis.LF || (globalThis.LF = {});
     if (bot) { c.fillStyle = '#8a2a1a'; c.beginPath(); c.arc(x + 12, y + T, 5, 0, Math.PI); c.fill(); }
   };
   RN.keyGate = function (c, x, y, rg, tx, ty, get) {
-    c.fillStyle = '#3a3018'; c.fillRect(x, y, T, T);
-    c.strokeStyle = '#ffe28c'; c.lineWidth = 2; c.strokeRect(x + 3, y + 3, T - 6, T - 6);
-    if (get(tx - 1, ty) !== TL.KY && ty === 1) { c.fillStyle = '#ffe28c'; c.beginPath(); c.arc(x + 2 * T, y + T / 2, 12, 0, TAU); c.fill(); c.fillStyle = '#3a3018'; c.beginPath(); c.arc(x + 2 * T, y + T / 2 - 2, 4, 0, TAU); c.fill(); c.fillRect(x + 2 * T - 2, y + T / 2, 4, 8); }
+    const g = c.createLinearGradient(0, y, 0, y + T); g.addColorStop(0, '#2a2418'); g.addColorStop(1, '#151008');
+    c.fillStyle = g; c.fillRect(x, y, T, T);
+    c.fillStyle = '#5a4a28'; for (let i = 0; i < 3; i++) c.fillRect(x + 4 + i * 10, y, 4, T);
+    if (get(tx, ty + 1) !== TL.KY) { c.fillStyle = '#c9a85a'; c.fillRect(x, y + T - 5, T, 5); c.fillStyle = '#ffe28c'; c.fillRect(x, y + T - 5, T, 1.5); }
   };
-
+  RN.keyEmblem = function (c, x, y, tx, ty, get) {
+    if (get(tx - 1, ty) !== TL.KY && get(tx, ty - 1) !== TL.KY) {
+      const cx = x + 2 * T, cy = y + T;
+      c.fillStyle = '#1a140a'; c.beginPath(); c.arc(cx, cy, 20, 0, TAU); c.fill();
+      c.strokeStyle = '#ffe28c'; c.lineWidth = 2.5; c.beginPath(); c.arc(cx, cy, 20, 0, TAU); c.stroke();
+      c.beginPath(); c.ellipse(cx, cy + 2, 8, 11, 0, 0, TAU); c.stroke();
+      c.fillStyle = '#ffe28c'; c.beginPath(); c.moveTo(cx, cy - 6); c.quadraticCurveTo(cx + 5, cy + 2, cx, cy + 8); c.quadraticCurveTo(cx - 5, cy + 2, cx, cy - 6); c.fill();
+      c.fillRect(cx - 6, cy - 14, 12, 3);
+    }
+  };
   RN.backwall = function (b, room, reg, rg, get, solid) {
     const W = room.rd.W, H = room.rd.H, s = reg.bgs;
     const base = mix(reg.bg[1], reg.rock, 0.35);

@@ -140,7 +140,7 @@ const R = [
   // Lanternwatch (hub)
   ['h_secret', 'Forgotten Nook', 'hub', -3, 0, 1, 1, { secret: true, items: [{ t: 'mask', where: 'floor', x: 0.5 }] }],
   ['h_cliff', 'Lantern\'s Fall', 'hub', -2, 0, 1, 1, { start: true, lore: ['fall'], signs: [{ x: 0.62, text: 'tut_move' }] }],
-  ['h_town', 'Lanternwatch', 'hub', -1, 0, 3, 1, { bench: 0.42, npcs: [{ id: 'mirelle', x: 0.22 }, { id: 'thrennic', x: 0.62 }, { id: 'penna', x: 0.8 }], lore: [{ id: 'lantern_gate', x: 0.5 }], calm: true }],
+  ['h_town', 'Lanternwatch', 'hub', -1, 0, 3, 1, { bench: 0.42, grates: true, npcs: [{ id: 'mirelle', x: 0.26 }, { id: 'thrennic', x: 0.6 }, { id: 'penna', x: 0.71 }], lore: [{ id: 'lantern_gate', x: 0.5 }], signs: [{ x: 0.1, text: 'tut_drop' }, { x: 0.9, text: 'tut_drop2' }], calm: true }],
   ['h_east', 'Elder\'s Hollow', 'hub', 2, 0, 1, 1, { npcs: [{ id: 'lumen', x: 0.55 }], calm: true, items: [{ t: 'glim', v: 40, where: 'alcove' }] }],
   // Old Umbravale
   ['r1_hall', 'Hall of Banners', 'umbravale', -1, 1, 2, 1, { npcs: [{ id: 'quillon', x: 0.7 }], lore: ['banners'], items: [{ t: 'wisp', where: 'floor', x: 0.3 }], signs: [{ x: 0.5, text: 'tut_attack' }] }],
